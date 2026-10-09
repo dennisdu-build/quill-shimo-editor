@@ -1,0 +1,52 @@
+/* ============================================================
+   全局设计 TOKEN —— 唯一颜色来源，index.html / folder.html 共用
+   修改主题色只需改这里，不要在页面里写死色值
+   ============================================================ */
+:root{
+  /* 品牌主色（石墨蓝） */
+  --sm-primary:#2E7CF6;            /* 主按钮 / 链接 / 焦点 / 选中 / 拖拽指示线 */
+  --sm-primary-hover:#1B66E0;      /* 主按钮悬停 */
+  --sm-primary-active:#1559CC;     /* 主按钮按下 */
+  --sm-primary-bg:#E8F0FF;         /* 浅蓝选中底 / 高亮行 */
+
+  /* 功能色 */
+  --sm-danger:#E0564F;             /* 删除 / 危险操作 */
+  --sm-danger-bg:rgba(224,86,79,.12);
+
+  /* 文字 */
+  --sm-text:#41464B;               /* 正文 */
+  --sm-text-strong:#2C3033;        /* 标题 / 强调 */
+  --sm-text-secondary:rgba(65,70,75,.45); /* 次要 / 占位 */
+
+  /* 边框与背景 */
+  --sm-border:rgba(65,70,75,.15);
+  --sm-divider:rgba(65,70,75,.08);
+  --sm-bg:#F9F9F9;                 /* 页面底 */
+  --sm-bg-hover:#F1F1F1;           /* 悬停底 */
+
+  /* 圆角：统一小圆角，禁止 999px 胶囊 */
+  --sm-radius:2px;
+  --sm-radius-card:4px;
+
+  /* ==================== 编辑器页面别名（index.html 历史变量） ==================== */
+  --ink:var(--sm-text);                /* 主文字 */
+  --ink-strong:var(--sm-text-strong);  /* 标题/强调 */
+  --ink-soft:#54585d;                  /* gray90 */
+  --muted:#a0a2a5;                     /* gray50 次要文字 */
+  --muted-2:#8d9093;                   /* gray60 */
+  --border:#ececed;                    /* gray10 */
+  --border-2:#e5e5e5;                  /* 常用分割线 */
+  --bg:#f7f7f7;                        /* body 背景 */
+  --bg-2:var(--sm-bg);                 /* gray3 */
+  --surface:#ffffff;                   /* 卡片表面 */
+  --accent:var(--sm-primary);          /* 主题蓝/链接 */
+  --accent-2:#5ba0e7;                  /* blue6 */
+  --accent-3:#6da0e3;                  /* blue5 */
+  --blue1:var(--sm-primary-bg);        /* 浅蓝高亮背景 */
+  --blue10:rgba(93,154,245,.1);
+  --red:var(--sm-danger);              /* 危险红 */
+}
+
+/* ==================== 公共组件：Toast 提示 ==================== */
+.toast{position:fixed;left:50%;bottom:32px;transform:translate(-50%,10px);background:var(--sm-text-strong);background:rgba(44,48,51,.92);color:#fff;font-size:13px;padding:8px 16px;border-radius:var(--sm-radius);opacity:0;transition:opacity .2s,transform .2s;z-index:9999;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+.toast.show{opacity:1;transform:translate(-50%,0);}

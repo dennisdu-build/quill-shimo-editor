@@ -1,2 +1,8 @@
 # 锁定到实测通过的版本，保证其他开发者环境一致
 Django==5.2.18
+
+# 文档导出（HTML → MD/TXT/DOCX/EPUB 转换，均为纯 Python，无系统二进制依赖）
+markdownify
+beautifulsoup4
+python-docx
+ebooklib

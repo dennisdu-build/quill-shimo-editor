@@ -20,22 +20,35 @@
 - 文档默认样式弹窗（字体 / 字号 / 行距 / 颜色，可设为新建默认值）
 - 更多颜色取色器（HSV 色域 + Hex + 自定义颜色，localStorage 记忆）
 - 快捷键：`Ctrl+Alt+1~6` 标题、`Ctrl+Alt+0` 正文、`Ctrl+K` 链接、`Ctrl+Shift+L` 目录、`Ctrl+/` 聚焦编辑器
-- 分享链接复制、导出 Markdown、新建 / 删除文档
+- 分享链接复制、导出（Markdown / Word / EPUB / HTML / 纯文本）、新建 / 删除文档
 
 ## 项目结构
 
 ```
 quill-shimo-editor/
-├── backend/                      # Django 后端
+├── backend/                          # Django 后端
 │   ├── manage.py
-│   ├── requirements.txt          # 仅依赖 Django
-│   ├── .venv314/                 # Python 3.14 虚拟环境（含 Django 5.2）
-│   ├── shimo_backend/            # 项目配置（settings / urls / wsgi）
-│   ├── docs/                     # 文档应用（models / views / urls / migrations）
-│   │   └── models.py             # Space / Folder / Document 模型
+│   ├── requirements.txt             # Django 5.2.18 + 导出依赖（markdownify / bs4 / python-docx / ebooklib）
+│   ├── shimo_backend/               # 项目配置（settings / urls / wsgi）
+│   ├── docs/                        # 文档应用
+│   │   ├── models.py               # Space / Folder / Document 模型
+│   │   ├── views.py                 # API 视图 + 页面渲染
+│   │   ├── urls.py                  # 路由表
+│   │   ├── exporters.py             # 文档导出转换模块（HTML/MD/TXT/DOCX/EPUB）
+│   │   └── static/
+│   │       ├── css/tokens.css       # 全局设计 TOKEN（颜色/圆角/间距）+ 公共组件样式
+│   │       ├── css/editor.css       # 编辑器页专属样式
+│   │       ├── css/folder.css       # 文件管理页专属样式
+│   │       ├── js/common.js         # 公共工具（showToast）
+│   │       └── js/api.js            # 统一 API 客户端（window.EditorAPI）
+│   │       └── js/editor.js         # 编辑器页逻辑
+│   │       └── js/folder.js         # 文件管理页逻辑
 │   └── templates/editor/
-│       ├── index.html            # Quill 富文本编辑器页（/docs/<id>/）
-│       └── folder.html           # 空间/文件夹/文件列表页（/ 与 /space/.../）
+│       ├── index.html               # Quill 富文本编辑器页（HTML 骨架，/docs/<id>/）
+│       └── folder.html              # 空间/文件夹/文件列表页（HTML 骨架 + bootData）
+├── DEVELOPMENT.md                    # 4S 开发文档（服务/存储/场景/扩展）
+├── LICENSE                           # MIT
+├── .gitignore
 └── README.md
 ```
 
@@ -50,6 +63,8 @@ quill-shimo-editor/
 
 ## API（同源，无 CORS）
 
+> **CSRF 策略**：本项目面向单用户本地使用，所有写 API 使用 `@csrf_exempt`。生产环境如需多用户，应移除豁免并启用 Django CSRF 中间件 + 前端 CSRF token 注入。
+
 ### 文档
 | 方法 | 路径 | 说明 |
 |---|---|---|
@@ -58,6 +73,7 @@ quill-shimo-editor/
 | GET | `/api/docs/<id>/` | 读取单篇完整内容 |
 | PUT | `/api/docs/<id>/update/` | 自动保存 `{"title","content_html","folder"}` |
 | DELETE | `/api/docs/<id>/delete/` | 删除文档 |
+| GET | `/api/docs/<id>/export/<fmt>/` | 导出文档（`fmt` ∈ `html` / `md` / `txt` / `docx` / `epub`），返回文件下载 |
 
 ### 空间
 | 方法 | 路径 | 说明 |
@@ -87,7 +103,7 @@ quill-shimo-editor/
 |---|---|
 | 图片 | 打开本地文件选择器 → 上传 → 光标处插入（见上节） |
 | 表格 | 8×8 网格选择器，悬停高亮显示「N × M 表格」，点击插入对应空表 |
-| 图表 | 子菜单 5 类（柱状/折线/饼图/面积/条形），生成石墨绿 SVG 转 data URI 插入 |
+| 图表 | 子菜单 5 类（柱状/折线/饼图/面积/条形），生成品牌蓝 SVG 转 data URI 插入 |
 | 超链接 | 自定义对话框（链接文字 + URL，有选区自动预填） |
 | 代码块 | 插入代码块 |
 | 公式 | LaTeX 对话框，以 `$…$` 插入 |
@@ -98,16 +114,20 @@ quill-shimo-editor/
 | 附件 / 音频 | 打开本地文件选择器 → 上传到 `/api/upload-file/` → 插入附件卡片或音频播放器 |
 | 云文档 / 预览窗口 / 第三方 | 复刻入口与交互（附件/链接对话框/占位文本） |
 
-### 主题色（石墨品牌绿）
-整体视觉统一为石墨品牌绿：主按钮 / 新建 / 创建 / 文档图标 / 复选框选中态 / 图表 / 对话框确定均使用 `#00b38a`（渐变 `#00b38a → #33c7a3`）与石墨绿 `#2BBAA5`；链接保持石墨蓝。文件列表行 hover 浅蓝高亮，行内「更多」按钮 hover 显示，与石墨一致。
-
+### 主题色与设计 TOKEN
+全局设计 TOKEN 定义在 `backend/docs/static/css/tokens.css`，两个页面共用：
+- **品牌主色** `--sm-primary: #2E7CF6`（主按钮 / 链接 / 焦点 / 选中 / 拖拽指示线）
+- **危险色** `--sm-danger: #E0564F`（删除操作）
+- **文字** `--sm-text: #41464B` / `--sm-text-strong: #2C3033`
+- **背景** `--sm-bg: #F9F9F9` / `--sm-bg-hover: #F1F1F1`
+- **圆角** `--sm-radius: 2px`（统一小圆角，禁用 999px 胶囊）
 
 ## 本地运行
 
 ```bash
 cd backend
 python3 -m venv .venv314        # 首次：创建虚拟环境
-.venv314/bin/pip install -r requirements.txt   # 安装 Django
+.venv314/bin/pip install -r requirements.txt   # 安装 Django + 导出依赖
 .venv314/bin/python manage.py migrate
 .venv314/bin/python manage.py runserver 8000
 ```
@@ -124,7 +144,7 @@ python3 -m venv .venv314        # 首次：创建虚拟环境
 
 ## 生产部署注意
 
-- `shimo_backend/settings.py`：`DEBUG=False`、`SECRET_KEY` 与 `ALLOWED_HOSTS` 改用环境变量；
+- `shimo_backend/settings.py`：`DEBUG` / `SECRET_KEY` / `ALLOWED_HOSTS` 均已支持环境变量（`DJANGO_DEBUG` / `DJANGO_SECRET_KEY` / `DJANGO_ALLOWED_HOSTS`）；
 - 数据库默认 SQLite，正式环境可换 PostgreSQL（改 `DATABASES`）；
 - 前端引用 CDN（Quill / Vue / Pinia），生产部署需保证可访问 `cdn.jsdelivr.net`，或改为本地静态资源；
 - 部署到支持 Python 的托管（Render / Fly / Railway / 云服务器 + gunicorn）：`gunicorn shimo_backend.wsgi`。

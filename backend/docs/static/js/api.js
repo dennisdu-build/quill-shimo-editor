@@ -103,6 +103,11 @@
       remove: function (id) {
         return request('docs/' + id + '/delete/', { method: 'DELETE' });
       },
+      /* 导出文档为标准格式文件下载（fmt ∈ html/md/txt/docx/epub）。
+         走浏览器原生下载，不进 JSON 通道，无 Promise 返回。 */
+      exportDoc: function (id, fmt) {
+        window.location.href = BASE + 'docs/' + id + '/export/' + fmt + '/';
+      },
       /* 页面卸载前兜底保存：sendBeacon 不阻塞关闭 */
       beacon: function (id, rawJson) {
         if (!navigator.sendBeacon) return false;

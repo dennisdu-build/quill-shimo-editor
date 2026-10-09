@@ -1,15 +1,17 @@
 import json
 import os
 import uuid
+from urllib.parse import quote
 
 from django.conf import settings
 from django.core.files.storage import default_storage
-from django.http import JsonResponse, HttpResponseNotFound, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseNotFound, HttpResponseBadRequest, HttpResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from .models import Document, Space, Folder
+from . import exporters
 
 
 def _fmt_dt(dt):
@@ -194,6 +196,59 @@ def delete_doc(request, doc_id):
                                     content_type='application/json')
     doc.delete()
     return JsonResponse({'ok': True})
+
+
+@require_http_methods(['GET'])
+def export_doc(request, doc_id, fmt):
+    """GET /api/docs/<id>/export/<fmt>/ —— 导出文档为标准格式文件下载。
+
+    fmt ∈ html / md / txt / docx / epub，返回 Content-Disposition: attachment。
+    """
+    try:
+        doc = Document.objects.get(pk=doc_id)
+    except Document.DoesNotExist:
+        return HttpResponseNotFound(JsonResponse({'error': 'not found'}).content,
+                                    content_type='application/json')
+    fmt = (fmt or '').lower()
+    # 格式 → (Content-Type, 扩展名, 是否二进制)
+    spec = {
+        'html': ('text/html; charset=utf-8', 'html', False),
+        'md': ('text/markdown; charset=utf-8', 'md', False),
+        'txt': ('text/plain; charset=utf-8', 'txt', False),
+        'docx': ('application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'docx', True),
+        'epub': ('application/epub+zip', 'epub', True),
+    }
+    if fmt not in spec:
+        return HttpResponseBadRequest(
+            JsonResponse({'error': '不支持的格式，可选 html/md/txt/docx/epub'}).content,
+            content_type='application/json')
+    content_type, ext, is_binary = spec[fmt]
+    title = doc.title or '未命名文档'
+    filename = '%s.%s' % (exporters.sanitize_filename(title), ext)
+
+    try:
+        if fmt == 'html':
+            body = exporters.export_html(title, doc.content_html)
+        elif fmt == 'md':
+            body = exporters.export_markdown(doc.content_html)
+        elif fmt == 'txt':
+            body = exporters.export_text(doc.content_html)
+        elif fmt == 'docx':
+            body = exporters.export_docx(title, doc.content_html)
+        elif fmt == 'epub':
+            body = exporters.export_epub(title, doc.content_html)
+    except Exception as e:
+        return HttpResponse(
+            JsonResponse({'error': '导出失败: %s' % e}).content,
+            content_type='application/json', status=500)
+
+    if is_binary:
+        response = HttpResponse(body.getvalue(), content_type=content_type)
+    else:
+        response = HttpResponse(body, content_type=content_type)
+    # RFC 5987：filename*=UTF-8''<urlencoded> 支持中文文件名
+    response['Content-Disposition'] = "attachment; filename*=UTF-8''%s" % quote(filename)
+    return response
 
 
 # ==================== 空间 API ====================

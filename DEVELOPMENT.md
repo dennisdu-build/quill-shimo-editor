@@ -30,7 +30,7 @@
 ```
 backend/
 ├── manage.py                       # 命令行入口，DJANGO_SETTINGS_MODULE=shimo_backend.settings
-├── requirements.txt                # 仅 Django 一项依赖
+├── requirements.txt                # Django 5.2.18 + 导出依赖（markdownify/bs4/python-docx/ebooklib）
 ├── shimo_backend/                  # 项目配置包
 │   ├── settings.py                 # 全局配置
 │   ├── urls.py                     # 页面路由（+ 挂载 /api/ 与 /media/）
@@ -40,10 +40,19 @@ backend/
 │   ├── models.py                   # Space / Folder / Document
 │   ├── views.py                    # 页面视图 + 全部 JSON API
 │   ├── urls.py                     # API 路由（前缀 /api/）
+│   ├── exporters.py                # 文档导出转换（HTML/MD/TXT/DOCX/EPUB）
+│   ├── static/
+│   │   ├── css/tokens.css          # 全局设计 TOKEN + 公共组件样式（toast 等）
+│   │   ├── css/editor.css          # 编辑器页专属样式
+│   │   ├── css/folder.css          # 文件管理页专属样式
+│   │   ├── js/common.js            # 公共工具（showToast）
+│   │   └── js/api.js               # 统一 API 客户端（window.EditorAPI）
+│   │   └── js/editor.js            # 编辑器页逻辑
+│   │   └── js/folder.js            # 文件管理页逻辑
 │   └── migrations/                 # 0001_initial、0002_space_folder
 ├── templates/editor/
-│   ├── folder.html                 # 文件管理页
-│   └── index.html                  # 编辑器页
+│   ├── folder.html                 # 文件管理页（HTML 骨架 + bootData JSON）
+│   └── index.html                  # 编辑器页（HTML 骨架）
 └── media/                          # 用户上传文件
 ```
 
@@ -209,7 +218,7 @@ Space ──CASCADE──< Folder ──CASCADE──< Folder (children)
 
 两个页面对应两类核心场景，页面初始化数据来自 Django 注入 + 运行时 API 拉取。
 
-## 3.1 文件管理页（`templates/editor/folder.html`，982 行）
+## 3.1 文件管理页（`templates/editor/folder.html` + `static/css/folder.css` + `static/js/folder.js`）
 
 ### 页面结构
 - `#topbar`：搜索框（`#searchInput`）、模板库、新建拆分按钮（`#tbCreateMain` + `#tbCreateArrow`）、头像
@@ -247,7 +256,7 @@ init()
 
 行选择 key 约定：文件夹前缀 `f:`，文档前缀 `d:`（如 `f:5`、`d:12`），删除据此分流。
 
-## 3.2 编辑器页（`templates/editor/index.html`，2379 行）
+## 3.2 编辑器页（`templates/editor/index.html` + `static/css/editor.css` + `static/js/editor.js`）
 
 ### 自定义 Quill 能力（脚本头部注册）
 - **Font**：扩展白名单 11 种字体（SimSun/SimHei/KaiTi/FangSong/MicrosoftYaHei/Arial/Droid Serif/Source Code Pro/Times New Roman/Noto Sans JP/Noto Serif JP）

@@ -9,6 +9,8 @@ urlpatterns = [
     path('docs/<int:doc_id>/', views.get_doc),
     path('docs/<int:doc_id>/update/', views.update_doc),
     path('docs/<int:doc_id>/delete/', views.delete_doc),
+    # 文档导出 API（html / md / txt / docx / epub）
+    path('docs/<int:doc_id>/export/<str:fmt>/', views.export_doc),
     # 空间 API
     path('spaces/', views.list_spaces),
     path('spaces/create/', views.create_space),
