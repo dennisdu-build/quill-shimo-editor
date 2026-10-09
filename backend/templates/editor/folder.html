@@ -1,0 +1,980 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>石墨文档</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%232BBAA5'/%3E%3Cpath d='M7.2 15.2c.4-3.4 3.4-3.2 5.4-3.9 1.9-.7 2.8-1.8 2.6-3.9' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='8.6' cy='8.4' r='1.4' fill='%23fff'/%3E%3Ccircle cx='15.6' cy='16.4' r='1.4' fill='%23fff'/%3E%3C/svg%3E">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{font-family:BlinkMacSystemFont,-apple-system,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;background:#f9f9f9;color:rgba(65,70,75,.9);font-size:13px;overflow:hidden;}
+button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit;}
+input{font-family:inherit;outline:none;}
+a{text-decoration:none;color:inherit;}
+svg{display:block;flex-shrink:0;}
+
+#app{height:100vh;display:flex;flex-direction:column;}
+
+/* ==================== 顶栏（48px 白底） ==================== */
+#topbar{height:48px;background:#fff;border-bottom:1px solid rgba(65,70,75,.08);display:flex;align-items:center;padding:0 16px;flex-shrink:0;position:relative;z-index:20;}
+.tb-logo{display:flex;align-items:center;gap:8px;padding:0 8px 0 4px;}
+.tb-logo .name{font-size:15px;font-weight:600;color:#2c3033;letter-spacing:.5px;white-space:nowrap;}
+#tbSearch{display:flex;align-items:center;gap:6px;width:240px;height:30px;background:#f5f5f5;border-radius:4px;padding:0 10px;margin-left:12px;color:rgba(65,70,75,.45);}
+#tbSearch:focus-within{background:#fff;box-shadow:0 0 0 1.5px #00b38a;color:rgba(65,70,75,.7);}
+#tbSearch input{flex:1;min-width:0;border:none;background:transparent;font-size:13px;color:rgba(65,70,75,.9);}
+#tbSearch input::placeholder{color:rgba(65,70,75,.35);}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:16px;position:relative;}
+.tb-link{font-size:14px;color:rgba(65,70,75,.9);display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;}
+.tb-link:hover{color:#2c3033;}
+.create-split{display:flex;align-items:center;height:30px;background:linear-gradient(0deg,#00b38a 0%,#33c7a3 100%);border-radius:4px;overflow:hidden;box-shadow:0 1px 2px rgba(0,179,138,.25);}
+.create-split .cs-main{height:30px;padding:0 12px;color:#fff;font-size:13px;display:flex;align-items:center;gap:4px;}
+.create-split .cs-arrow{width:24px;height:30px;color:#fff;display:flex;align-items:center;justify-content:center;border-left:1px solid rgba(255,255,255,.18);}
+.create-split:hover{opacity:.94;}
+#tbAvatar{width:28px;height:28px;border-radius:50%;background:#00b38a;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+
+/* ==================== 主体（侧边栏 + 内容区） ==================== */
+#bodyRow{flex:1;display:flex;min-height:0;}
+
+/* ---- 侧边栏 240px ---- */
+#sidebar{width:240px;flex-shrink:0;display:flex;flex-direction:column;padding:16px 0 12px;transition:margin-left .2s ease;overflow:hidden;}
+body.side-collapsed #sidebar{margin-left:-240px;}
+.sb-create-wrap{padding:0 16px;flex-shrink:0;position:relative;}
+#sbCreate{width:100%;height:36px;background:linear-gradient(0deg,#00b38a 0%,#33c7a3 100%);color:#fff;font-size:14px;border-radius:6px;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 1px 2px rgba(0,179,138,.25);}
+#sbCreate:hover{opacity:.92;}
+#sbNav{flex:1;overflow-y:auto;padding:14px 0 8px;}
+#sbNav::-webkit-scrollbar{width:4px;}
+#sbNav::-webkit-scrollbar-thumb{background:rgba(65,70,75,.15);border-radius:2px;}
+.sb-divider{width:208px;height:1px;background:rgba(65,70,75,.08);margin:8px 16px;}
+.nav-item{width:208px;margin:0 16px;height:36px;display:flex;align-items:center;gap:10px;padding:0 10px;border-radius:4px;color:#41464b;font-size:13px;cursor:pointer;white-space:nowrap;overflow:hidden;}
+.nav-item:hover{background:rgba(65,70,75,.05);}
+.nav-item.active{background:#f1f1f1;font-weight:500;}
+.nav-item.disabled{color:rgba(65,70,75,.3);cursor:default;}
+.nav-item.disabled:hover{background:none;}
+.nav-item .grow{margin-left:auto;color:rgba(65,70,75,.35);display:flex;}
+/* 分组小标签 */
+.nav-group-label{width:208px;margin:2px 16px 0;padding:0 10px;height:26px;display:flex;align-items:center;font-size:12px;color:rgba(65,70,75,.45);}
+.nav-group-label .add{margin-left:auto;width:20px;height:20px;border-radius:2px;display:none;align-items:center;justify-content:center;color:rgba(65,70,75,.55);}
+.nav-group-label:hover .add{display:flex;}
+.nav-group-label .add:hover{background:rgba(65,70,75,.1);}
+/* 空间子项 */
+.nav-sub{gap:8px;}
+.nav-sub .space-mark{width:16px;height:16px;border-radius:3px;background:linear-gradient(135deg,#33c7a3,#00b38a);color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:600;}
+.nav-add-space{color:rgba(65,70,75,.55);font-size:13px;}
+.nav-add-space:hover{color:#41464b;}
+/* 团队空间 hover 删除按钮 */
+.nav-sub .space-del{margin-left:auto;width:20px;height:20px;border-radius:2px;display:none;align-items:center;justify-content:center;color:rgba(65,70,75,.5);flex-shrink:0;}
+.nav-item.nav-sub:hover .space-del{display:flex;}
+.nav-sub .space-del:hover{background:rgba(224,86,79,.12);color:#e0564f;}
+
+/* ==================== 快速访问（拖拽固定快捷方式） ==================== */
+#quickBox{margin:0 16px;}
+#quickDrop{display:none;height:48px;margin:2px 0;border:1.5px dashed #00b38a;border-radius:4px;background:rgba(0,179,138,.08);align-items:center;justify-content:center;font-size:12px;color:#00b38a;}
+#quickBox.dragging #quickDrop{display:flex;}
+.quick-list{list-style:none;}
+.quick-item{height:36px;display:flex;align-items:center;gap:10px;padding:0 10px;border-radius:4px;color:#41464b;font-size:13px;cursor:pointer;white-space:nowrap;overflow:hidden;position:relative;}
+.quick-item:hover{background:rgba(65,70,75,.05);}
+.quick-item .q-ic{display:flex;flex-shrink:0;color:rgba(65,70,75,.6);}
+.quick-item .q-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.quick-item .q-more{margin-left:auto;width:20px;height:20px;border-radius:2px;display:none;align-items:center;justify-content:center;color:rgba(65,70,75,.55);flex-shrink:0;}
+.quick-item:hover .q-more{display:flex;}
+.quick-item .q-more:hover{background:rgba(65,70,75,.1);color:#41464b;}
+.quick-empty{height:36px;display:flex;align-items:center;padding:0 10px;font-size:12px;color:rgba(65,70,75,.35);}
+
+/* ---- 折叠把手 30px ---- */
+#gutter{width:30px;flex-shrink:0;position:relative;cursor:pointer;}
+#gutterBtn{position:absolute;top:50%;left:0;transform:translateY(-50%);width:20px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:0 4px 4px 0;color:rgba(65,70,75,.4);opacity:0;transition:opacity .15s;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.12);}
+#gutter:hover #gutterBtn{opacity:1;}
+body.side-collapsed #gutterBtn svg{transform:rotate(180deg);}
+
+/* ---- 主内容区 ---- */
+#main{flex:1;min-width:0;display:flex;flex-direction:column;background:#fff;}
+#crumbHeader{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;flex-shrink:0;}
+#crumbs{font-size:16px;font-weight:400;color:#41464b;display:flex;align-items:center;gap:6px;min-width:0;}
+#crumbs a{color:#41464b;cursor:pointer;}
+#crumbs a:hover{color:#00b38a;}
+#crumbs .sep{color:rgba(65,70,75,.35);display:flex;}
+#crumbOps{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+#newHereBtn{height:30px;padding:0 14px;background:#fff;border:1px solid rgba(65,70,75,.15);border-radius:4px;font-size:13px;color:#41464b;display:flex;align-items:center;gap:4px;}
+#newHereBtn:hover{border-color:rgba(65,70,75,.35);}
+.op-divider{width:1px;height:26px;background:rgba(65,70,75,.12);margin:0 6px;}
+.op-btn{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;color:rgba(65,70,75,.7);}
+.op-btn:hover{background:rgba(65,70,75,.06);color:#41464b;}
+
+#contentRow{flex:1;display:flex;min-height:0;}
+
+/* ==================== 文件列表 ==================== */
+#listArea{flex:1;min-width:0;overflow-y:auto;padding:0 32px 32px;}
+#listArea::-webkit-scrollbar{width:6px;}
+#listArea::-webkit-scrollbar-thumb{background:rgba(65,70,75,.15);border-radius:3px;}
+#listWrapper{width:859px;max-width:100%;}
+
+.tr{display:grid;grid-template-columns:30px minmax(260px,1fr) 127px 127px 127px 34px;align-items:center;}
+#tableHeader{position:sticky;top:0;background:#fff;z-index:2;border-bottom:1px solid rgba(65,70,75,.08);}
+#tableHeader .th{font-size:12px;color:rgba(65,70,75,.9);height:30px;display:flex;align-items:center;}
+#tableHeader .th-name{padding-left:24px;cursor:pointer;gap:2px;}
+#tableHeader .th-sort{cursor:pointer;gap:2px;user-select:none;}
+#tableHeader .th-sort:hover{color:#2c3033;}
+#tableHeader .th-sort .arr{font-size:9px;line-height:1;opacity:0;}
+#tableHeader .th-sort.asc .arr,#tableHeader .th-sort.desc .arr{opacity:1;}
+
+/* 批量操作条 */
+#batchBar{position:sticky;top:0;background:#fff;z-index:2;border-bottom:1px solid rgba(65,70,75,.08);height:30px;display:none;align-items:center;justify-content:space-between;padding-left:30px;font-size:12px;color:rgba(65,70,75,.9);}
+#batchBar .ops{display:flex;align-items:center;}
+#batchBar .bb-btn{height:22px;padding:0 10px;font-size:12px;border-radius:2px;display:flex;align-items:center;}
+#batchBar .bb-btn:hover{background:rgba(65,70,75,.06);}
+#batchBar .bb-del{color:#e0564f;}
+#batchBar .bb-del:hover{background:rgba(224,86,79,.08);}
+
+/* 文件行：59px */
+.file-row{height:59px;font-size:13px;cursor:pointer;position:relative;}
+.file-row:hover,.file-row.selected{background:#e4f1fb;}
+.fr-ck{display:flex;align-items:center;justify-content:center;}
+.fr-name{display:flex;align-items:center;gap:10px;padding-left:24px;min-width:0;padding-right:12px;}
+.fr-name .doc-title{color:rgba(65,70,75,.9);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fr-name input.rename-input{width:100%;height:26px;border:1px solid #00b38a;border-radius:2px;padding:0 6px;font-size:13px;color:#41464b;background:#fff;}
+.fr-meta{color:rgba(65,70,75,.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:12px;}
+.fr-pub{display:flex;align-items:center;justify-content:center;position:relative;}
+.fr-more{width:24px;height:24px;border-radius:2px;display:none;align-items:center;justify-content:center;color:rgba(65,70,75,.6);}
+.file-row:hover .fr-more{display:flex;}
+.fr-more:hover{background:rgba(65,70,75,.1);color:#41464b;}
+
+/* 自定义复选框 */
+.ck{width:16px;height:16px;border:1.5px solid rgba(0,0,0,.15);border-radius:2px;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.ck svg{opacity:0;}
+.ck.half svg.minus{opacity:1;}
+.ck.checked svg.check{opacity:1;}
+.ck.checked,.ck.half{background:#00b38a;border-color:#00b38a;}
+
+/* 空状态 */
+#emptyState{display:none;flex-direction:column;align-items:center;padding:120px 0 0;color:rgba(65,70,75,.6);}
+#emptyState .t{font-size:14px;margin:16px 0 20px;}
+#emptyCreate{height:32px;padding:0 20px;background:linear-gradient(0deg,#00b38a 0%,#33c7a3 100%);color:#fff;font-size:13px;border-radius:6px;}
+#emptyCreate:hover{opacity:.92;}
+
+/* ==================== 右侧详情面板 339px ==================== */
+#detailPanel{width:339px;flex-shrink:0;border-left:1px solid rgba(65,70,75,.08);display:flex;flex-direction:column;background:#fff;}
+#dpPlaceholder{flex:1;display:flex;align-items:center;justify-content:center;color:rgba(65,70,75,.4);font-size:13px;padding:0 24px;text-align:center;}
+#dpContent{display:none;flex-direction:column;flex:1;min-height:0;overflow-y:auto;}
+#dpContent.show{display:flex;}
+.dp-preview{height:200px;background:#f9f9f9;display:flex;align-items:center;justify-content:center;border-bottom:1px solid rgba(65,70,75,.08);flex-shrink:0;}
+.dp-title{font-size:14px;font-weight:500;color:#41464b;padding:16px 24px 8px;word-break:break-all;}
+.dp-meta{padding:0 24px;}
+.dp-meta .mrow{display:flex;justify-content:space-between;font-size:13px;padding:9px 0;gap:12px;}
+.dp-meta .k{color:rgba(65,70,75,.6);flex-shrink:0;}
+.dp-meta .v{color:rgba(65,70,75,.9);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dp-actions{padding:20px 24px;display:flex;gap:8px;margin-top:auto;}
+.dp-open{height:30px;padding:0 16px;background:linear-gradient(0deg,#00b38a 0%,#33c7a3 100%);color:#fff;border-radius:6px;font-size:13px;display:flex;align-items:center;}
+.dp-open:hover{opacity:.92;}
+.dp-rename{height:30px;padding:0 16px;border:1px solid rgba(65,70,75,.2);border-radius:4px;color:#41464b;font-size:13px;background:#fff;display:flex;align-items:center;}
+.dp-rename:hover{background:rgba(65,70,75,.05);}
+.dp-del{height:30px;padding:0 16px;border:1px solid rgba(224,86,79,.4);border-radius:4px;color:#e0564f;font-size:13px;background:#fff;display:flex;align-items:center;}
+.dp-del:hover{background:rgba(224,86,79,.06);}
+
+/* ==================== 通用下拉菜单 ==================== */
+.pop-menu{position:fixed;background:#fff;border:1px solid rgba(65,70,75,.1);border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,.12);padding:4px 0;z-index:100;min-width:160px;}
+.pop-menu .pm-item{display:flex;align-items:center;gap:10px;height:36px;padding:0 14px;font-size:13px;color:#41464b;cursor:pointer;white-space:nowrap;}
+.pop-menu .pm-item:hover{background:#f1f6fc;}
+.pop-menu .pm-item.disabled{color:rgba(65,70,75,.3);cursor:default;background:none;}
+.pop-menu .pm-divider{height:1px;background:rgba(65,70,75,.08);margin:4px 0;}
+.pop-menu.wide{width:224px;}
+
+/* ==================== 新建空间弹窗 ==================== */
+.modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:200;}
+.modal-mask.show{display:flex;}
+.modal-box{width:400px;background:#fff;border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.18);overflow:hidden;}
+.modal-box .m-head{height:52px;display:flex;align-items:center;padding:0 24px;font-size:15px;font-weight:600;color:#2c3033;border-bottom:1px solid rgba(65,70,75,.08);}
+.modal-box .m-body{padding:24px;}
+.modal-box .m-label{font-size:13px;color:#41464b;margin-bottom:8px;}
+.modal-box input.m-input{width:100%;height:34px;border:1px solid rgba(65,70,75,.2);border-radius:4px;padding:0 10px;font-size:13px;color:#41464b;}
+.modal-box input.m-input:focus{border-color:#00b38a;box-shadow:0 0 0 2px rgba(0,179,138,.15);}
+.modal-box .m-foot{height:60px;display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:0 24px;border-top:1px solid rgba(65,70,75,.08);}
+.m-btn{height:32px;padding:0 18px;border-radius:4px;font-size:13px;display:flex;align-items:center;}
+.m-btn.cancel{border:1px solid rgba(65,70,75,.2);color:#41464b;background:#fff;}
+.m-btn.cancel:hover{background:rgba(65,70,75,.04);}
+.m-btn.ok{background:linear-gradient(0deg,#00b38a 0%,#33c7a3 100%);color:#fff;}
+.m-btn.ok:hover{opacity:.92;}
+.m-btn.ok:disabled{opacity:.4;cursor:not-allowed;}
+.m-error{color:#e0564f;font-size:12px;margin-top:8px;min-height:16px;}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:40px;transform:translate(-50%,10px);background:rgba(44,48,51,.92);color:#fff;font-size:13px;padding:8px 16px;border-radius:4px;opacity:0;transition:all .2s;z-index:300;pointer-events:none;}
+.toast.show{opacity:1;transform:translate(-50%,0);}
+
+/* ==================== 侧边栏底部 ==================== */
+.sb-bottom{padding:12px 16px 0;flex-shrink:0;}
+#upgradeBox{width:208px;background:#f1f1f1;border-radius:4px;padding:12px 14px;cursor:pointer;}
+#upgradeBox:hover{background:#ececec;}
+#upgradeBox .t{font-size:13px;color:#41464b;font-weight:500;}
+#upgradeBox .d{font-size:12px;color:rgba(65,70,75,.55);margin-top:4px;}
+#capacity{width:208px;margin-top:14px;}
+.cap-label{display:flex;justify-content:space-between;font-size:12px;color:rgba(65,70,75,.6);margin-bottom:6px;}
+#capBar{height:4px;background:#e8e8e8;border-radius:2px;overflow:hidden;}
+#capFill{display:block;height:100%;width:0;background:#00b38a;transition:width .3s;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ==================== 顶栏 ==================== -->
+  <header id="topbar">
+    <div class="tb-logo">
+      <svg width="24" height="24" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#2BBAA5"/><path d="M7.2 15.2c.4-3.4 3.4-3.2 5.4-3.9 1.9-.7 2.8-1.8 2.6-3.9" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="8.6" cy="8.4" r="1.4" fill="#fff"/><circle cx="15.6" cy="16.4" r="1.4" fill="#fff"/></svg>
+      <span class="name">石墨文档</span>
+    </div>
+    <div id="tbSearch">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.4" stroke="currentColor" stroke-width="1.3"/><path d="M9.4 9.4L12.6 12.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      <input placeholder="搜索当前位置" id="searchInput">
+    </div>
+    <div class="tb-right">
+      <a class="tb-link" id="tplLink">模板库</a>
+      <a class="tb-link" id="perkLink">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 3.5h10l-1.2 4.2A2 2 0 0 1 8.9 9H5.1a2 2 0 0 1-1.9-1.3L2 3.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M5 9l-.8 2.5h5.6L9 9" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M3.2 11.5h7.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        更多权益
+      </a>
+      <div class="create-split" id="tbCreateWrap">
+        <button class="cs-main" id="tbCreateMain">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1.5v9M1.5 6h9" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>
+          创建
+        </button>
+        <button class="cs-arrow" id="tbCreateArrow">
+          <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.6 3L4.5 5.9L7.4 3" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div id="tbAvatar" title="我">D</div>
+    </div>
+  </header>
+
+  <div id="bodyRow">
+
+    <!-- ==================== 侧边栏 ==================== -->
+    <aside id="sidebar">
+      <div class="sb-create-wrap">
+        <button id="sbCreate">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.8v10.4M1.8 7h10.4" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>
+          新建
+        </button>
+      </div>
+      <nav id="sbNav">
+        <div class="nav-item" id="navDesktop">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.8" y="2.8" width="12.4" height="8.4" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 13.8h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          我的桌面
+        </div>
+        <div class="nav-group-label">团队空间
+          <span class="add" id="addSpaceBtn" title="新建团队空间">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1.6v8.8M1.6 6h8.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </span>
+        </div>
+        <div id="spaceList"></div>
+        <div class="nav-item nav-add-space" id="addSpaceNav">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          新建团队空间
+        </div>
+        <div class="sb-divider"></div>
+        <div class="nav-item" data-nav="recent">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.2" stroke="currentColor" stroke-width="1.3"/><path d="M8 4.6V8l2.4 1.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          最近文件
+        </div>
+        <div class="nav-item" data-nav="shared">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5.2" r="2.6" stroke="currentColor" stroke-width="1.3"/><path d="M2.8 13.4c.4-2.8 2.4-4.4 5.2-4.4s4.8 1.6 5.2 4.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          共享给我
+        </div>
+        <div class="nav-item" data-nav="fav">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6L8 1.8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+          我的收藏
+        </div>
+        <div class="nav-item disabled" data-nav="feed">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2a4 4 0 0 1 4 4v2.6l1.2 2.2H2.8L4 8.6V6a4 4 0 0 1 4-4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.4 13a1.7 1.7 0 0 0 3.2 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          工作动态
+        </div>
+        <div class="sb-divider"></div>
+        <div class="nav-item" data-nav="tag">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 7.2V3a.5.5 0 0 1 .5-.5h4.2c.3 0 .5.1.7.3l5.6 5.6a1 1 0 0 1 0 1.4l-3.4 3.4a1 1 0 0 1-1.4 0L2.8 7.9a.5.5 0 0 1-.3-.7z" stroke="currentColor" stroke-width="1.3"/><circle cx="5.4" cy="5.4" r="1" fill="currentColor"/></svg>
+          个人标签
+        </div>
+        <div class="nav-item disabled" data-nav="vipTag">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="6.5" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M5.2 7V5a2.8 2.8 0 0 1 5.6 0v2" stroke="currentColor" stroke-width="1.3"/></svg>
+          超级会员专享标签功能
+          <span class="grow">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1.5" y="5" width="9" height="5.5" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M3.5 5V3.8a2.5 2.5 0 0 1 5 0V5" stroke="currentColor" stroke-width="1.2"/></svg>
+          </span>
+        </div>
+        <div class="sb-divider"></div>
+        <div id="quickBox">
+          <div class="nav-item" data-nav="quick">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M9 1.8L3.4 9h3.4l-.8 5.2L11.8 7H8.4L9 1.8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+            快速访问
+          </div>
+          <ul class="quick-list" id="quickList"></ul>
+          <div id="quickDrop">松开鼠标添加</div>
+        </div>
+        <div class="sb-divider"></div>
+        <div class="nav-item" data-nav="trash">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.8 4h10.4M5.8 4V2.8a.8.8 0 0 1 .8-.8h2.8a.8.8 0 0 1 .8.8V4M4.2 4l.6 8.6a1 1 0 0 0 1 .9h4.4a1 1 0 0 0 1-.9L11.8 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.6 7v3.6M9.4 7v3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          回收站
+        </div>
+      </nav>
+      <div class="sb-bottom">
+        <div id="upgradeBox">
+          <div class="t">升级到高级版</div>
+          <div class="d">尊享更多高级权益</div>
+        </div>
+        <div id="capacity">
+          <div class="cap-label"><span>我的容量</span><span id="capText">0 B/1 GB</span></div>
+          <div id="capBar"><i id="capFill"></i></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 折叠把手 -->
+    <div id="gutter" title="收起侧边栏">
+      <div id="gutterBtn">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M6.5 1.5L3 5l3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+
+    <!-- ==================== 主内容区 ==================== -->
+    <main id="main">
+      <div id="crumbHeader">
+        <div id="crumbs"></div>
+        <div id="crumbOps">
+          <button id="newHereBtn">
+            新建到此处
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5L5 6.5l3-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="op-divider"></div>
+          <button class="op-btn" title="筛选">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 3.5h11L9.3 8.4v4.1l-2.6-1.4V8.4L2.5 3.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="op-btn" title="视图设置">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2.2" y="2.2" width="4.8" height="4.8" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2.2" width="4.8" height="4.8" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2.2" y="9" width="4.8" height="4.8" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="4.8" height="4.8" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+          </button>
+          <button class="op-btn" title="更多">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="3.2" cy="8" r="1.1" fill="currentColor"/><circle cx="8" cy="8" r="1.1" fill="currentColor"/><circle cx="12.8" cy="8" r="1.1" fill="currentColor"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="contentRow">
+        <div id="listArea">
+          <div id="listWrapper">
+            <!-- 表头 -->
+            <div class="tr" id="tableHeader">
+              <div class="fr-ck"><span class="ck" id="ckAll" title="全选">
+                <svg class="check" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.2L4 7.7l4.5-5.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <svg class="minus" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5h7" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
+              </span></div>
+              <div class="th th-name th-sort" data-sort="title">文件名<span class="arr">↑</span></div>
+              <div class="th">创建者</div>
+              <div class="th th-sort" data-sort="updated_at">最近更新<span class="arr">↑</span></div>
+              <div class="th th-sort" data-sort="size">大小<span class="arr">↑</span></div>
+              <div class="th th-pub"></div>
+            </div>
+            <!-- 批量操作条 -->
+            <div id="batchBar">
+              <span id="batchCount">已选 0 项</span>
+              <span class="ops">
+                <button class="bb-btn bb-del" id="batchDel">删除</button>
+                <button class="bb-btn" id="batchCancel">取消</button>
+              </span>
+            </div>
+            <!-- 文件行容器 -->
+            <div id="fileList"></div>
+            <!-- 空状态 -->
+            <div id="emptyState">
+              <svg width="64" height="64" viewBox="0 0 64 64" fill="none"><path d="M14 8h26l12 12v34a2 2 0 0 1-2 2H14a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z" stroke="rgba(65,70,75,.25)" stroke-width="2.5" stroke-linejoin="round"/><path d="M40 8v12h12" stroke="rgba(65,70,75,.25)" stroke-width="2.5" stroke-linejoin="round"/><path d="M22 32h20M22 40h20M22 48h12" stroke="rgba(65,70,75,.2)" stroke-width="2.5" stroke-linecap="round"/></svg>
+              <div class="t">此处空空如也，新建一个吧</div>
+              <button id="emptyCreate">新建文档</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== 右侧详情面板 ==================== -->
+        <aside id="detailPanel">
+          <div id="dpPlaceholder">请选择一个文件或者文件夹预览</div>
+          <div id="dpContent">
+            <div class="dp-preview" id="dpPreview"></div>
+            <div class="dp-title" id="dpTitle"></div>
+            <div class="dp-meta" id="dpMeta"></div>
+            <div class="dp-actions" id="dpActions">
+              <button class="dp-open" id="dpOpen">打开</button>
+              <button class="dp-rename" id="dpRename">重命名</button>
+              <button class="dp-del" id="dpDel">删除</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- 新建团队空间弹窗 -->
+<div class="modal-mask" id="spaceModal">
+  <div class="modal-box">
+    <div class="m-head">新建团队空间</div>
+    <div class="m-body">
+      <div class="m-label">空间名称</div>
+      <input class="m-input" id="spaceNameInput" maxlength="100" placeholder="请输入空间名称">
+      <div class="m-error" id="spaceError"></div>
+    </div>
+    <div class="m-foot">
+      <button class="m-btn cancel" id="spaceCancel">取消</button>
+      <button class="m-btn ok" id="spaceOk" disabled>创建</button>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/api.js' %}"></script>
+<script id="bootData" type="application/json">{"space": {{ space_id|default:1 }}, "folder": {{ folder_id|default:'null' }}}</script>
+<script>
+(function(){
+'use strict';
+var boot=JSON.parse(document.getElementById('bootData').textContent);
+var curSpace=String(boot.space), curFolder=boot.folder?String(boot.folder):null;
+
+var $=function(s){return document.querySelector(s);};
+var fileList=$('#fileList'), ckAll=$('#ckAll');
+var spaces=[], folders=[], docs=[];
+var selected=new Set();           /* "d:147" / "f:5" */
+var sortKey='updated_at', sortAsc=false;
+var renaming=false;
+
+/* ================= 图标 ================= */
+var ICON={
+  doc:'<svg width="24" height="24" viewBox="0 0 24 24"><path d="M5.5 3h9L19 7.5V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="#fff" stroke="#00b38a" stroke-width="1.5" stroke-linejoin="round"/><path d="M14.5 3v4.5H19" fill="none" stroke="#00b38a" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.5 12.5h7M8.5 16h7" stroke="#00b38a" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  folder:'<svg width="24" height="24" viewBox="0 0 24 24"><path d="M2.5 7c0-.8.7-1.5 1.5-1.5h4.6c.4 0 .8.2 1.1.5l.8 1c.3.3.6.5 1 .5h6c.8 0 1.5.7 1.5 1.5v8c0 .8-.7 1.5-1.5 1.5H4c-.8 0-1.5-.7-1.5-1.5V7z" fill="#FFD666"/><path d="M2.5 9.5h19" stroke="#F0B429" stroke-width="1" opacity=".6"/></svg>',
+  doc16:'<svg width="16" height="16" viewBox="0 0 16 16"><path d="M3.5 1.5h6L13 5v8.8c0 .4-.3.7-.7.7H3.7c-.4 0-.7-.3-.7-.7V2.2c0-.4.3-.7.5-.7z" fill="#fff" stroke="#00b38a" stroke-width="1.2"/><path d="M9.5 1.5V5H13" fill="none" stroke="#00b38a" stroke-width="1.2"/></svg>',
+  folder16:'<svg width="16" height="16" viewBox="0 0 16 16"><path d="M1.8 4.5c0-.5.4-.9.9-.9h3c.3 0 .5.1.7.3l.6.7h6.3c.5 0 .9.4.9.9v5.9c0 .5-.4.9-.9.9H2.7c-.5 0-.9-.4-.9-.9V4.5z" fill="#FFD666"/></svg>',
+  space16:'<svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="#00b38a"/><path d="M5.2 5.5h5.6M5.2 8h5.6M5.2 10.5h3.4" stroke="#fff" stroke-width="1.1" stroke-linecap="round"/></svg>',
+  more:'<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="2.8" cy="7" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1" fill="currentColor"/><circle cx="11.2" cy="7" r="1" fill="currentColor"/></svg>'
+};
+
+/* ================= 工具 ================= */
+function parseSize(s){
+  var m=/^([\d.]+)\s*(B|KB|MB|GB)$/.exec((s||'').trim());
+  if(!m) return 0;
+  var unit={B:1,KB:1024,MB:1048576,GB:1073741824}[m[2]];
+  return Math.round(parseFloat(m[1])*unit);
+}
+function toast(msg){
+  var t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){t.classList.add('show');});
+  setTimeout(function(){t.classList.remove('show'); setTimeout(function(){t.remove();},200);},1600);
+}
+function getSpace(id){ return spaces.filter(function(s){return String(s.id)===String(id);})[0]; }
+function getFolder(id){ return folders.filter(function(f){return String(f.id)===String(id);})[0]; }
+
+/* ================= URL 与导航 ================= */
+function spaceRoot(id){
+  var sp=getSpace(id);
+  if(sp&&sp.kind==='personal') return '/';
+  return '/space/'+id+'/';
+}
+function folderUrl(spId,fId){ return '/space/'+spId+'/folder/'+fId+'/'; }
+function openDocEditor(id){
+  localStorage.setItem('shimo_return', location.pathname);
+  location.href='/docs/'+id+'/';
+}
+function folderPath(fId){
+  var path=[]; var f=getFolder(fId), guard=0;
+  while(f&&guard++<50){ path.unshift({id:f.id,name:f.name}); f=f.parent?getFolder(f.parent):null; }
+  return path;
+}
+
+/* ================= 通用弹出菜单 ================= */
+function popMenu(anchor, items, width){
+  closePop();
+  var menu=document.createElement('div');
+  menu.className='pop-menu'+(width==='wide'?' wide':'');
+  menu.id='__popMenu';
+  items.forEach(function(it){
+    if(it.divider){ var d=document.createElement('div'); d.className='pm-divider'; menu.appendChild(d); return; }
+    var el=document.createElement('div');
+    el.className='pm-item'+(it.disabled?' disabled':'');
+    el.innerHTML=(it.icon||'<span style="width:16px"></span>')+'<span>'+it.label+'</span>';
+    if(!it.disabled){
+      /* 石墨同款：按下即激活（pointerdown/mousedown/click 三重兜底，fired 防重触发） */
+      var fired=false;
+      var activate=function(){ if(fired) return; fired=true; closePop(); it.onClick&&it.onClick(); };
+      el.addEventListener('pointerdown',function(e){ e.preventDefault(); e.stopPropagation(); activate(); });
+      el.addEventListener('mousedown',function(e){ e.preventDefault(); e.stopPropagation(); activate(); });
+      el.addEventListener('click',function(e){ e.stopPropagation(); activate(); });
+    }
+    menu.appendChild(el);
+  });
+  document.body.appendChild(menu);
+  var r=anchor.getBoundingClientRect();
+  var w=menu.offsetWidth, h=menu.offsetHeight;
+  var left=Math.min(r.left, window.innerWidth-w-8);
+  var top=r.bottom+4;
+  if(top+h>window.innerHeight-8) top=r.top-h-4;
+  menu.style.left=left+'px'; menu.style.top=top+'px';
+  setTimeout(function(){
+    document.addEventListener('mousedown',outsideClose,true);
+  },0);
+}
+function outsideClose(e){ if(!e.target.closest('#__popMenu')) closePop(); }
+function closePop(){
+  var m=$('#__popMenu'); if(m) m.remove();
+  document.removeEventListener('mousedown',outsideClose,true);
+}
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') closePop(); });
+
+/* ================= 创建下拉 ================= */
+function createMenuItems(){
+  return [
+    {icon:ICON.doc16,label:'新建文档',onClick:createDocHere},
+    {icon:ICON.folder16,label:'新建文件夹',onClick:createFolderHere},
+    {divider:true},
+    {icon:ICON.space16,label:'新建团队空间',onClick:openSpaceModal}
+  ];
+}
+$('#tbCreateMain').addEventListener('click',function(e){ popMenu(this,createMenuItems()); });
+$('#tbCreateArrow').addEventListener('click',function(e){ popMenu($('#tbCreateWrap'),createMenuItems()); });
+$('#sbCreate').addEventListener('click',function(e){ popMenu(this,createMenuItems()); });
+$('#newHereBtn').addEventListener('click',function(e){ popMenu(this,createMenuItems()); });
+$('#emptyCreate').addEventListener('click',createDocHere);
+
+/* ================= 新建空间弹窗 ================= */
+var spaceModal=$('#spaceModal'), spaceInput=$('#spaceNameInput'), spaceOk=$('#spaceOk'), spaceError=$('#spaceError');
+function openSpaceModal(){
+  spaceInput.value=''; spaceError.textContent=''; spaceOk.disabled=true;
+  spaceModal.classList.add('show');
+  setTimeout(function(){spaceInput.focus();},50);
+}
+function closeSpaceModal(){ spaceModal.classList.remove('show'); }
+spaceInput.addEventListener('input',function(){ spaceOk.disabled=!this.value.trim(); spaceError.textContent=''; });
+$('#addSpaceBtn').addEventListener('click',openSpaceModal);
+$('#addSpaceNav').addEventListener('click',openSpaceModal);
+$('#spaceCancel').addEventListener('click',closeSpaceModal);
+spaceModal.addEventListener('click',function(e){ if(e.target===spaceModal) closeSpaceModal(); });
+spaceOk.addEventListener('click',async function(){
+  var name=spaceInput.value.trim();
+  if(!name) return;
+  var sp;
+  try{ sp=await EditorAPI.spaces.create(name); }
+  catch(e){ spaceError.textContent='创建失败，请重试'; return; }
+  location.href=spaceRoot(sp.id);
+});
+spaceInput.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!spaceOk.disabled) spaceOk.click(); });
+
+/* ================= 新建文档/文件夹 ================= */
+async function createDocHere(){
+  var body={title:'未命名文档',space:curSpace};
+  if(curFolder) body.folder=curFolder;
+  var d;
+  try{ d=await EditorAPI.docs.create(body); }catch(e){ toast('创建失败'); return; }
+  openDocEditor(d.id);
+}
+
+async function createFolderHere(){
+  var body={space:curSpace,name:'新建文件夹'};
+  if(curFolder) body.parent=curFolder;
+  var f;
+  try{ f=await EditorAPI.folders.create(body); }catch(e){ toast('创建失败'); return; }
+  /* 就地进入重命名，形成“创建→立刻可见”闭环 */
+  await reloadContext();
+  startRename(f.id,true);
+}
+
+/* ================= 行内重命名 ================= */
+function startRename(folderId,isNew){
+  if(renaming) return;
+  var row=fileList.querySelector('.folder-row[data-id="'+folderId+'"]');
+  if(!row){ return; }
+  renaming=true;
+  var nameWrap=row.querySelector('.fr-name');
+  var span=nameWrap.querySelector('.doc-title');
+  var oldName=span.textContent;
+  var input=document.createElement('input');
+  input.className='rename-input'; input.value=oldName;
+  nameWrap.replaceChild(input,span);
+  input.focus(); input.select();
+  var done=false;
+  async function commit(){
+    if(done) return; done=true; renaming=false;
+    var name=input.value.trim();
+    if(!name || name===oldName){
+      if(!name && isNew){ await EditorAPI.folders.remove(folderId); }
+      await reloadContext(); return;
+    }
+    try{ await EditorAPI.folders.rename(folderId,name); }catch(e){ toast('重命名失败'); }
+    await reloadContext();
+  }
+  function cancel(){
+    if(done) return; done=true; renaming=false;
+    if(isNew){ EditorAPI.folders.remove(folderId).then(reloadContext); }
+    else reloadContext();
+  }
+  input.addEventListener('keydown',function(e){
+    if(e.key==='Enter'){ e.preventDefault(); commit(); }
+    if(e.key==='Escape'){ e.preventDefault(); cancel(); }
+  });
+  input.addEventListener('blur',commit);
+  /* 阻止行点击在编辑时触发跳转 */
+  input.addEventListener('click',function(e){e.stopPropagation();});
+}
+
+/* ================= 行渲染 ================= */
+function curFolders(){
+  return folders.filter(function(f){ return String(f.parent||'')===String(curFolder||''); })
+    .sort(function(a,b){ return a.name.localeCompare(b.name,'zh'); });
+}
+function curDocs(){
+  var arr=docs.slice(), dir=sortAsc?1:-1;
+  if(sortKey==='size') arr.sort(function(a,b){return (parseSize(a.size)-parseSize(b.size))*dir;});
+  else if(sortKey==='title') arr.sort(function(a,b){return (a.title||'').localeCompare(b.title||'','zh')*dir;});
+  else arr.sort(function(a,b){var va=a[sortKey]||'',vb=b[sortKey]||'';return va<vb?-dir:va>vb?dir:0;});
+  return arr;
+}
+
+function makeCk(selKey){
+  var ck=document.createElement('span');
+  ck.className='ck'+(selected.has(selKey)?' checked':'');
+  ck.innerHTML='<svg class="check" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.2L4 7.7l4.5-5.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  ck.addEventListener('click',function(e){ e.stopPropagation(); toggleSel(selKey); });
+  return ck;
+}
+
+function buildFolderRow(f){
+  var row=document.createElement('div');
+  var key='f:'+f.id;
+  row.className='tr file-row folder-row'+(selected.has(key)?' selected':'');
+  row.dataset.id=f.id;
+
+  var c1=document.createElement('div'); c1.className='fr-ck'; c1.appendChild(makeCk(key)); row.appendChild(c1);
+
+  var c2=document.createElement('div'); c2.className='fr-name';
+  c2.innerHTML=ICON.folder;
+  var tt=document.createElement('span'); tt.className='doc-title'; tt.textContent=f.name;
+  c2.appendChild(tt); row.appendChild(c2);
+
+  var c3=document.createElement('div'); c3.className='fr-meta'; c3.textContent='我'; row.appendChild(c3);
+  var c4=document.createElement('div'); c4.className='fr-meta'; c4.textContent=f.updated_at||''; row.appendChild(c4);
+  var c5=document.createElement('div'); c5.className='fr-meta'; c5.textContent='—'; row.appendChild(c5);
+
+  var c6=document.createElement('div'); c6.className='fr-pub';
+  var more=document.createElement('span'); more.className='fr-more'; more.innerHTML=ICON.more;
+  more.addEventListener('click',function(e){
+    e.stopPropagation();
+    popMenu(this,[
+      {icon:ICON.folder16,label:'打开',onClick:function(){location.href=folderUrl(curSpace,f.id);}},
+      {label:'重命名',icon:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11.5 2.8l1.7 1.7c.3.3.3.8 0 1.1L6 12.8l-2.6.7.7-2.6 7.1-7.1a.8.8 0 0 1 1.1 0z" stroke="currentColor" stroke-width="1.2"/></svg>',onClick:function(){startRename(f.id,false);}},
+      {divider:true},
+      {label:'删除',icon:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.8 4h10.4M5.8 4V2.8a.8.8 0 0 1 .8-.8h2.8a.8.8 0 0 1 .8.8V4M4.2 4l.6 8.6a1 1 0 0 0 1 .9h4.4a1 1 0 0 0 1-.9L11.8 4" stroke="#e0564f" stroke-width="1.2"/></svg>',onClick:function(){delItems([key]);}}
+    ]);
+  });
+  c6.appendChild(more); row.appendChild(c6);
+
+  row.addEventListener('click',function(){ if(!renaming) location.href=folderUrl(curSpace,f.id); });
+  row.draggable=true;
+  row.addEventListener('dragstart',function(e){
+    e.dataTransfer.setData('text/shimo-item','folder:'+f.id+':'+f.name);
+    e.dataTransfer.effectAllowed='copyLink';
+    quickBox.classList.add('dragging');
+  });
+  return row;
+}
+
+function buildDocRow(d){
+  var row=document.createElement('div');
+  var key='d:'+d.id;
+  row.className='tr file-row doc-row'+(selected.has(key)?' selected':'');
+  row.dataset.id=d.id;
+
+  var c1=document.createElement('div'); c1.className='fr-ck'; c1.appendChild(makeCk(key)); row.appendChild(c1);
+
+  var c2=document.createElement('div'); c2.className='fr-name';
+  c2.innerHTML=ICON.doc;
+  var tt=document.createElement('span'); tt.className='doc-title'; tt.textContent=d.title||'未命名文档';
+  c2.appendChild(tt); row.appendChild(c2);
+
+  var c3=document.createElement('div'); c3.className='fr-meta'; c3.textContent='我'; row.appendChild(c3);
+  var c4=document.createElement('div'); c4.className='fr-meta'; c4.textContent=d.updated_at||''; row.appendChild(c4);
+  var c5=document.createElement('div'); c5.className='fr-meta'; c5.textContent=d.size||''; row.appendChild(c5);
+
+  var c6=document.createElement('div'); c6.className='fr-pub';
+  var more=document.createElement('span'); more.className='fr-more'; more.innerHTML=ICON.more;
+  more.addEventListener('click',function(e){
+    e.stopPropagation();
+    popMenu(this,[
+      {icon:ICON.doc16,label:'打开',onClick:function(){openDocEditor(d.id);}},
+      {divider:true},
+      {label:'删除',icon:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.8 4h10.4M5.8 4V2.8a.8.8 0 0 1 .8-.8h2.8a.8.8 0 0 1 .8.8V4M4.2 4l.6 8.6a1 1 0 0 0 1 .9h4.4a1 1 0 0 0 1-.9L11.8 4" stroke="#e0564f" stroke-width="1.2"/></svg>',onClick:function(){delItems([key]);}}
+    ]);
+  });
+  c6.appendChild(more); row.appendChild(c6);
+
+  row.addEventListener('click',function(){ openDocEditor(d.id); });
+  row.draggable=true;
+  row.addEventListener('dragstart',function(e){
+    e.dataTransfer.setData('text/shimo-item','doc:'+d.id+':'+(d.title||'未命名文档'));
+    e.dataTransfer.effectAllowed='copyLink';
+    quickBox.classList.add('dragging');
+  });
+  return row;
+}
+
+function render(){
+  fileList.innerHTML='';
+  var fRows=curFolders(), dRows=curDocs();
+  var total=fRows.length+dRows.length;
+  fRows.forEach(function(f){ fileList.appendChild(buildFolderRow(f)); });
+  dRows.forEach(function(d){ fileList.appendChild(buildDocRow(d)); });
+
+  $('#emptyState').style.display=total?'none':'flex';
+  $('#tableHeader').style.display=total?'grid':'none';
+
+  updateCkAll(total); updateDetail(); renderCrumbs(); renderSpaceList();
+}
+
+/* ================= 快速访问（拖拽固定，localStorage 持久化） ================= */
+var quickBox=$('#quickBox'), quickList=$('#quickList'), quickDrop=$('#quickDrop');
+var QUICK_KEY='shimo_quick_access';
+function loadQuick(){ try{ return JSON.parse(localStorage.getItem(QUICK_KEY)||'[]'); }catch(e){ return []; } }
+function saveQuick(list){ localStorage.setItem(QUICK_KEY,JSON.stringify(list)); }
+
+function renderQuick(){
+  var items=loadQuick();
+  quickList.innerHTML='';
+  if(!items.length){
+    var em=document.createElement('li'); em.className='quick-empty'; em.textContent='拖动文件/文件夹到这里固定';
+    quickList.appendChild(em);
+    return;
+  }
+  items.forEach(function(it){
+    var li=document.createElement('li'); li.className='quick-item';
+    var ic=document.createElement('span'); ic.className='q-ic';
+    ic.innerHTML= it.type==='folder'?ICON.folder16:ICON.doc16;
+    li.appendChild(ic);
+    var nm=document.createElement('span'); nm.className='q-name'; nm.textContent=it.name;
+    li.appendChild(nm);
+    var more=document.createElement('span'); more.className='q-more'; more.innerHTML=ICON.more; more.title='更多';
+    more.addEventListener('click',function(e){
+      e.stopPropagation();
+      popMenu(this,[{label:'移除快速访问',icon:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M9 1.8L3.4 9h3.4l-.8 5.2L11.8 7H8.4L9 1.8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>',onClick:function(){ removeQuick(it); }}]);
+    });
+    li.appendChild(more);
+    li.addEventListener('click',function(){
+      if(it.type==='folder') location.href=folderUrl(it.space||curSpace,it.id);
+      else openDocEditor(it.id);
+    });
+    quickList.appendChild(li);
+  });
+}
+function addQuick(item){
+  var items=loadQuick();
+  if(items.some(function(x){ return x.type===item.type&&String(x.id)===String(item.id); })){ toast('已在快速访问中'); return; }
+  items.unshift(item); saveQuick(items); renderQuick(); toast('已添加到快速访问');
+}
+function removeQuick(item){
+  saveQuick(loadQuick().filter(function(x){ return !(x.type===item.type&&String(x.id)===String(item.id)); }));
+  renderQuick(); toast('已移除');
+}
+/* 拖放接收：进入高亮，松手添加 */
+quickDrop.addEventListener('dragover',function(e){ e.preventDefault(); e.dataTransfer.dropEffect='copy'; });
+quickDrop.addEventListener('drop',function(e){
+  e.preventDefault(); quickBox.classList.remove('dragging');
+  var raw=e.dataTransfer.getData('text/shimo-item');
+  if(!raw) return;
+  var p=raw.split(':'); var type=p[0], id=p[1], name=p.slice(2).join(':');
+  addQuick({type:type,id:id,name:name,space:curSpace});
+});
+document.addEventListener('dragend',function(){ quickBox.classList.remove('dragging'); });
+document.addEventListener('drop',function(){ quickBox.classList.remove('dragging'); });
+
+/* ================= 面包屑 ================= */
+function renderCrumbs(){
+  var box=$('#crumbs'); box.innerHTML='';
+  var sp=getSpace(curSpace);
+  var rootA=document.createElement('a');
+  rootA.textContent=sp?sp.name:'我的桌面';
+  rootA.addEventListener('click',function(){ location.href=spaceRoot(curSpace); });
+  box.appendChild(rootA);
+  if(curFolder){
+    folderPath(curFolder).forEach(function(p){
+      var sep=document.createElement('span'); sep.className='sep'; sep.innerHTML='<svg width="8" height="12" viewBox="0 0 8 12"><path d="M2.5 1.5L6 6l-3.5 4.5" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>';
+      box.appendChild(sep);
+      var a=document.createElement('a'); a.textContent=p.name;
+      a.addEventListener('click',function(){ location.href=folderUrl(curSpace,p.id); });
+      box.appendChild(a);
+    });
+  }
+}
+
+/* ================= 侧边空间列表 ================= */
+function renderSpaceList(){
+  var box=$('#spaceList'); box.innerHTML='';
+  spaces.filter(function(s){return s.kind!=='personal';}).forEach(function(s){
+    var item=document.createElement('div');
+    item.className='nav-item nav-sub'+(String(s.id)===curSpace?' active':'');
+    var mark=document.createElement('span'); mark.className='space-mark'; mark.textContent=(s.name||' ').slice(0,1);
+    item.appendChild(mark);
+    var nm=document.createElement('span'); nm.textContent=s.name;
+    nm.style.overflow='hidden'; nm.style.textOverflow='ellipsis'; nm.style.whiteSpace='nowrap';
+    item.appendChild(nm);
+    var del=document.createElement('span'); del.className='space-del'; del.title='删除空间';
+    del.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
+    del.addEventListener('click',function(e){
+      e.stopPropagation();
+      if(!confirm('确定删除空间「'+s.name+'」？其中的文档和文件夹将一并删除。')) return;
+      EditorAPI.spaces.remove(s.id).then(function(){
+        if(String(s.id)===curSpace){ location.href='/'; return; }
+        loadSpaces();
+      },function(err){ alert(err.message||'删除失败'); });
+    });
+    item.appendChild(del);
+    item.addEventListener('click',function(){ location.href=spaceRoot(s.id); });
+    box.appendChild(item);
+  });
+  $('#navDesktop').classList.toggle('active', (getSpace(curSpace)||{}).kind==='personal');
+}
+
+/* ================= 选择 ================= */
+function toggleSel(key){
+  if(selected.has(key)) selected.delete(key); else selected.add(key);
+  render();
+}
+function updateCkAll(total){
+  ckAll.classList.remove('checked','half');
+  if(total&&selected.size===total) ckAll.classList.add('checked');
+  else if(selected.size>0) ckAll.classList.add('half');
+  var showBatch=selected.size>0;
+  $('#batchBar').style.display=showBatch?'flex':'none';
+  $('#tableHeader').style.display=showBatch?'none':(total?'grid':'none');
+  $('#batchCount').textContent='已选 '+selected.size+' 项';
+  document.querySelectorAll('#tableHeader .th-sort').forEach(function(th){
+    th.classList.remove('asc','desc');
+    if(th.dataset.sort===sortKey) th.classList.add(sortAsc?'asc':'desc');
+  });
+}
+ckAll.addEventListener('click',function(){
+  var keys=[];
+  curFolders().forEach(function(f){keys.push('f:'+f.id);});
+  curDocs().forEach(function(d){keys.push('d:'+d.id);});
+  var all=keys.length&&keys.every(function(k){return selected.has(k);});
+  if(all) keys.forEach(function(k){selected.delete(k);});
+  else keys.forEach(function(k){selected.add(k);});
+  render();
+});
+$('#batchCancel').addEventListener('click',function(){ selected.clear(); render(); });
+
+/* ================= 详情面板 ================= */
+function metaRow(k,v){
+  return '<div class="mrow"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>';
+}
+function updateDetail(){
+  var ph=$('#dpPlaceholder'), ct=$('#dpContent');
+  if(selected.size===0){ ph.style.display='flex'; ct.classList.remove('show'); return; }
+  ph.style.display='none'; ct.classList.add('show');
+
+  if(selected.size>1){
+    $('#dpPreview').innerHTML='<svg width="48" height="48" viewBox="0 0 48 48"><rect x="8" y="12" width="32" height="28" rx="3" fill="#fff" stroke="rgba(65,70,75,.3)" stroke-width="1.5"/></svg>';
+    $('#dpTitle').textContent='已选 '+selected.size+' 个项目';
+    $('#dpMeta').innerHTML=metaRow('类型','混合');
+    $('#dpOpen').style.display='none'; $('#dpRename').style.display='none';
+    return;
+  }
+  $('#dpOpen').style.display='flex';
+  var key=selected.values().next().value;
+  if(key.indexOf('f:')===0){
+    var f=getFolder(key.slice(2));
+    $('#dpPreview').innerHTML=ICON.folder;
+    $('#dpTitle').textContent=f.name;
+    var sp=getSpace(curSpace);
+    $('#dpMeta').innerHTML=
+      metaRow('类型','文件夹')+
+      metaRow('所在空间',sp?sp.name:'—')+
+      metaRow('创建时间',f.created_at||'—')+
+      metaRow('最近更新',f.updated_at||'—');
+    $('#dpRename').style.display='flex';
+    $('#dpOpen').textContent='打开';
+    $('#dpOpen').onclick=function(){location.href=folderUrl(curSpace,f.id);};
+    $('#dpRename').onclick=function(){startRename(f.id,false);};
+  }else{
+    var d=docs.filter(function(x){return 'd:'+x.id===key;})[0];
+    $('#dpPreview').innerHTML=ICON.doc;
+    $('#dpTitle').textContent=d.title||'未命名文档';
+    $('#dpMeta').innerHTML=
+      metaRow('类型','文档')+
+      metaRow('创建者','我')+
+      metaRow('创建时间',d.created_at||'—')+
+      metaRow('最近更新',d.updated_at||'—')+
+      metaRow('大小',d.size||'—');
+    $('#dpRename').style.display='none';
+    $('#dpOpen').textContent='打开';
+    $('#dpOpen').onclick=function(){openDocEditor(d.id);};
+  }
+  $('#dpDel').onclick=function(){ delItems(Array.from(selected)); };
+}
+
+/* ================= 删除 ================= */
+async function delItems(keys){
+  if(!keys.length) return;
+  if(!confirm('确定删除选中的 '+keys.length+' 个项目？文件夹内的文档会移到空间根目录。')) return;
+  for(var i=0;i<keys.length;i++){
+    var k=keys[i];
+    if(k.indexOf('f:')===0){ await EditorAPI.folders.remove(k.slice(2)); }
+    else{ await EditorAPI.docs.remove(k.slice(2)); }
+  }
+  selected.clear();
+  toast('已删除');
+  reloadContext();
+}
+$('#batchDel').addEventListener('click',function(){ delItems(Array.from(selected)); });
+
+/* ================= 排序 ================= */
+document.querySelectorAll('#tableHeader .th-sort').forEach(function(th){
+  th.addEventListener('click',function(){
+    var k=th.dataset.sort;
+    if(sortKey===k) sortAsc=!sortAsc; else { sortKey=k; sortAsc=true; }
+    render();
+  });
+});
+
+/* ================= 搜索（就地过滤） ================= */
+$('#searchInput').addEventListener('input',function(){
+  var kw=this.value.trim().toLowerCase();
+  var vis=0;
+  fileList.querySelectorAll('.file-row').forEach(function(row){
+    var hit=!kw||(row.querySelector('.doc-title').textContent.toLowerCase().indexOf(kw)>-1);
+    row.style.display=hit?'':'none';
+    if(hit) vis++;
+  });
+  $('#emptyState').style.display=vis?'none':'flex';
+  $('#tableHeader').style.display=vis?'grid':'none';
+});
+
+/* ================= 数据加载 ================= */
+async function reloadContext(){
+  selected.clear();
+  var fParam=curFolder||'root';
+  var results=await Promise.all([
+    EditorAPI.folders.list(curSpace),
+    EditorAPI.docs.list({space:curSpace,folder:fParam})
+  ]);
+  folders=results[0]; docs=results[1];
+  render();
+}
+
+async function init(){
+  spaces=await EditorAPI.spaces.list();
+  if(!getSpace(curSpace)){ curSpace=String(spaces[0]&&spaces[0].id||1); }
+  /* 容量：拉一次全量轻量列表统计 */
+  var all=await EditorAPI.docs.list();
+  var total=0; all.forEach(function(d){ total+=parseSize(d.size); });
+  var quota=1073741824;
+  var used=total<1048576?(total/1024).toFixed(2)+' KB':(total/1048576).toFixed(2)+' MB';
+  $('#capText').textContent=used+'/1 GB';
+  $('#capFill').style.width=Math.min(100,total/quota*100)+'%';
+
+  reloadContext();
+  renderQuick();
+}
+init();
+})();
+</script>
+</body>
+</html>

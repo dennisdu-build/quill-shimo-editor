@@ -1,0 +1,43 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# ===== 虚拟环境 =====
+.venv/
+.venv*/
+venv/
+env/
+ENV/
+
+# ===== Django =====
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+*.log
+local_settings.py
+
+# ===== 用户上传的媒体文件（不入库，保留目录结构） =====
+backend/media/images/*
+!backend/media/images/.gitkeep
+backend/media/uploads/*
+!backend/media/uploads/.gitkeep
+
+# ===== 测试与覆盖率 =====
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ===== 操作系统 =====
+.DS_Store
+Thumbs.db
+
+# ===== IDE / 编辑器 =====
+.idea/
+.vscode/
+*.swp
+*.swo
