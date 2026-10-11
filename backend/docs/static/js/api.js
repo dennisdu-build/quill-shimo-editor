@@ -30,6 +30,11 @@
       body = JSON.stringify(body);
       if (!headers['Content-Type']) headers['Content-Type'] = 'application/json';
     }
+    /* 演示用户身份：所有接口统一带上，后端据此做空间/文件夹权限过滤 */
+    if (!headers['X-Demo-User']) {
+      var uname = (window.localStorage && localStorage.getItem('demoUser')) || 'alice';
+      headers['X-Demo-User'] = uname;
+    }
 
     return fetch(BASE + path, { method: method, headers: headers, body: body }).then(function (resp) {
       /* 无论成功失败都尝试解析 JSON，失败回退为空对象 */
@@ -57,6 +62,9 @@
   window.EditorAPI = {
     /* 暴露底层方法，便于未覆盖的场景直接使用 */
     request: request,
+
+    /* 导航树（快捷面板"返回到"：按当前用户权限返回可见空间/文件夹/文档） */
+    nav: function () { return request('nav/'); },
 
     /* 空间 */
     spaces: {

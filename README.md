@@ -36,12 +36,13 @@ quill-shimo-editor/
 │   │   ├── urls.py                  # 路由表
 │   │   ├── exporters.py             # 文档导出转换模块（HTML/MD/TXT/DOCX/EPUB）
 │   │   └── static/
+│   │       ├── lib/quill/           # Quill 2.0.3 内核 + Snow 主题（本地部署）
 │   │       ├── css/tokens.css       # 全局设计 TOKEN（颜色/圆角/间距）+ 公共组件样式
 │   │       ├── css/editor.css       # 编辑器页专属样式
 │   │       ├── css/folder.css       # 文件管理页专属样式
 │   │       ├── js/common.js         # 公共工具（showToast）
-│   │       └── js/api.js            # 统一 API 客户端（window.EditorAPI）
-│   │       └── js/editor.js         # 编辑器页逻辑
+│   │       ├── js/api.js            # 统一 API 客户端（window.EditorAPI）
+│   │       ├── js/editor.js         # 编辑器页逻辑
 │   │       └── js/folder.js         # 文件管理页逻辑
 │   └── templates/editor/
 │       ├── index.html               # Quill 富文本编辑器页（HTML 骨架，/docs/<id>/）
@@ -146,5 +147,5 @@ python3 -m venv .venv314        # 首次：创建虚拟环境
 
 - `shimo_backend/settings.py`：`DEBUG` / `SECRET_KEY` / `ALLOWED_HOSTS` 均已支持环境变量（`DJANGO_DEBUG` / `DJANGO_SECRET_KEY` / `DJANGO_ALLOWED_HOSTS`）；
 - 数据库默认 SQLite，正式环境可换 PostgreSQL（改 `DATABASES`）；
-- 前端引用 CDN（Quill / Vue / Pinia），生产部署需保证可访问 `cdn.jsdelivr.net`，或改为本地静态资源；
+- 前端引用 CDN（Vue / Pinia），Quill 已本地部署；生产部署需保证可访问 `cdn.jsdelivr.net`，或改为本地静态资源；
 - 部署到支持 Python 的托管（Render / Fly / Railway / 云服务器 + gunicorn）：`gunicorn shimo_backend.wsgi`。

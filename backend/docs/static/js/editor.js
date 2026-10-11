@@ -314,23 +314,27 @@
   /* ===== 文档默认样式弹窗（复刻石墨） ===== */
   (function initDocStyle(){
     var mask=document.getElementById('docStyleMask'), modal=document.getElementById('docStyleModal');
-    var DEFAULTS={font:'',size:'12',line:'1.7',color:'#333333'};
-    var state={font:'',size:'12',line:'1.7',color:'#333333'};
+    var DEFAULTS={font:'',size:'14',line:'1.7',color:'#494949'};
+    var state={font:'',size:'14',line:'1.7',color:'#494949'};
     var fontFamilies={'SimSun':'SimSun,宋体,serif','SimHei':'SimHei,黑体,sans-serif','KaiTi':'KaiTi,楷体,serif','FangSong':'FangSong,仿宋,serif','Microsoft YaHei':'"Microsoft YaHei",微软雅黑,sans-serif','Arial':'Arial,sans-serif','Droid Serif':'"Droid Serif",serif','Source Code Pro':'"Source Code Pro",Menlo,Consolas,monospace','Times New Roman':'"Times New Roman",serif','Noto Sans JP':'"Noto Sans JP",sans-serif','Noto Serif JP':'"Noto Serif JP",serif'};
     var dsmFontNames={'':'默认字体','SimSun':'宋体','SimHei':'黑体','Microsoft YaHei':'微软雅黑','FangSong':'仿宋','KaiTi':'楷体','Arial':'Arial','Droid Serif':'Droid Serif','Source Code Pro':'Source Code Pro','Times New Roman':'Times New Roman','Noto Sans JP':'Noto Sans JP','Noto Serif JP':'Noto Serif JP'};
     var styleTag=document.createElement('style'); styleTag.id='docStyleOverride'; document.head.appendChild(styleTag);
     function applyDocStyle(st){
-      var css='.ql-snow .ql-editor{color:'+st.color+';font-size:'+st.size+'pt;line-height:'+st.line+';';
+      /* 通过 CSS 变量驱动：标题/段距/代码块等全部用 em，随基础字号 --doc-base 动态缩放 */
+      var css='.ql-snow .ql-editor{--doc-base:'+st.size+'px;--doc-color:'+st.color+';--doc-line:'+st.line+';font-family:-apple-system,"PingFang SC","Microsoft YaHei",微软雅黑,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;';
       if(st.font) css+='font-family:'+fontFamilies[st.font]+';';
-      css+='}.ql-snow .ql-editor p{color:'+st.color+';font-size:'+st.size+'pt;line-height:'+st.line+';}';
+      css+='}';
       styleTag.textContent=css;
     }
     var saved=null;
-    try{ localStorage.removeItem('docDefaultStyle'); saved=JSON.parse(localStorage.getItem('docDefaultStyle_v2')||'null'); }catch(e){}
+    try{ localStorage.removeItem('docDefaultStyle'); localStorage.removeItem('docDefaultStyle_v2'); saved=JSON.parse(localStorage.getItem('docDefaultStyle_v3')||'null'); }catch(e){}
     if(saved && saved.size){
       state=saved; applyDocStyle(state);
       document.getElementById('dsmSetter').textContent='我';
       document.getElementById('dsmDefault').checked=true;
+    } else {
+      /* 无保存值时也应用默认样式，确保 font-family 覆盖 Quill Snow 默认 CSS */
+      applyDocStyle(DEFAULTS);
     }
     ['9','10','11','12','13','14','16','18','20','22','24','30','36'].forEach(function(s){
       var d=document.createElement('div'); d.className='dmi'; d.dataset.v=s; d.textContent=s;
@@ -391,7 +395,7 @@
     document.getElementById('dsmOk').addEventListener('click',function(){
       applyDocStyle(state);
       if(document.getElementById('dsmDefault').checked){
-        try{ localStorage.setItem('docDefaultStyle_v2',JSON.stringify(state)); }catch(e){}
+        try{ localStorage.setItem('docDefaultStyle_v3',JSON.stringify(state)); }catch(e){}
       }
       document.getElementById('dsmSetter').textContent='我';
       close(); toast('已应用文档默认样式');
@@ -495,8 +499,23 @@
     }
     refreshToolbar();
   }
-  bindDrop('ulBtn','ulListMenu');
-  bindDrop('olBtn','olListMenu');
+  /* 石墨逻辑：列表按钮是「分裂按钮」——点主区域直接切换列表，点小箭头(▾)才弹样式网格 */
+  function bindListSplit(btnId, menuId, kind){
+    var btn=document.getElementById(btnId);
+    btn.addEventListener('mousedown',function(e){ e.preventDefault(); });
+    btn.addEventListener('click',function(e){
+      if(e.target.closest('.caret')){
+        e.stopPropagation(); closeAllMenus();
+        document.getElementById(menuId).classList.toggle('open');
+        return;
+      }
+      var f=quill.getFormat();
+      quill.format('list', f.list===kind ? false : kind);
+      refreshToolbar();
+    });
+  }
+  bindListSplit('ulBtn','ulListMenu','bullet');
+  bindListSplit('olBtn','olListMenu','ordered');
   document.getElementById('ulListMenu').addEventListener('click',function(e){
     var it=e.target.closest('.lsi'); if(!it) return;
     e.stopPropagation();
@@ -671,7 +690,9 @@
     var it=e.target.closest('.dmi'); if(!it) return;
     document.getElementById('chartMenu').classList.remove('open');
     var idx=quill.getSelection(true).index;
+    /* makeChartSvg 已返回 data:image/svg+xml，直接作为图片插入 */
     quill.insertEmbed(idx,'image',makeChartSvg(it.dataset.chart));
+    quill.insertText(idx+1,'\n','user');
     toast('已插入'+it.textContent); refreshToolbar();
   });
 
@@ -737,7 +758,7 @@
     var it=e.target.closest('.dmi'); if(!it) return;
     document.getElementById('insertMenu').classList.remove('open');
     var act=it.dataset.act, idx=quill.getSelection(true).index;
-    if(act==='image'){ pendingImageIndex=idx; document.getElementById('imageInput').click(); }
+    if(act==='image'){ /* 有二级菜单，悬停/点击由 imageSub 处理 */ }
     else if(act==='table'){ tablePicker.classList.add('open'); }
     else if(act==='chart'){ document.getElementById('chartMenu').classList.add('open'); }
     else if(act==='code'){ quill.format('code-block',true); }
@@ -745,7 +766,13 @@
     else if(act==='hr'){ try{ quill.insertEmbed(idx,'divider',true); }catch(err){ quill.insertText(idx,'\n————————\n'); } }
     else if(act==='quote'){ quill.format('blockquote',true); }
     else if(act==='formula'){ openFormulaDialog(); }
-    else if(act==='date'){ quill.insertText(idx, new Date().toLocaleDateString('zh-CN')); }
+    else if(act==='date'){
+      /* 石墨：插入可点的日期芯片（蓝色胶囊+日历图标），而非纯文本 */
+      var now=new Date();
+      var ds=now.toLocaleDateString('zh-CN');
+      quill.clipboard.dangerouslyPasteHTML(idx,'<span class="doc-date" contenteditable="false">📅 '+ds+'</span>&nbsp;');
+      refreshToolbar();
+    }
     else if(act==='emoji'){ emojiPanel.classList.add('open'); }
     else if(act==='audio'){ pendingImageIndex=idx; document.getElementById('audioInput').click(); }
     else if(act==='attachment'){ pendingImageIndex=idx; document.getElementById('fileInput').click(); }
@@ -753,6 +780,36 @@
     else if(act==='preview'){ openLinkDialog(); }  /* 复用链接对话框输入 URL */
     else if(act==='thirdparty'){ quill.insertText(idx,'【第三方内容：可在弹层中接入地图、视频等第三方应用】'); toast('第三方内容：演示占位'); }
   });
+  /* 插入菜单二级：悬停向右滑出（图片/表格/图表） */
+  (function(){
+    var insertDrop=document.getElementById('insertDrop');
+    var insertMenu=document.getElementById('insertMenu');
+    var subMap={image:'imageSub', table:'tablePicker', chart:'chartMenu'};
+    function closeFly(){ ['imageSub','tablePicker','chartMenu'].forEach(function(id){var el=document.getElementById(id); if(el) el.classList.remove('open'); }); }
+    insertMenu.querySelectorAll('.dmi.has-sub').forEach(function(it){
+      it.addEventListener('mouseenter',function(){
+        var act=it.dataset.act;
+        if(act==='thirdparty'){ return; }
+        var subId=subMap[act]; if(!subId) return;
+        var sub=document.getElementById(subId);
+        closeFly();
+        var ir=it.getBoundingClientRect(), dr=insertDrop.getBoundingClientRect();
+        sub.style.left=(ir.right-dr.left+6)+'px';
+        sub.style.top=(ir.top-dr.top)+'px';
+        sub.classList.add('open');
+      });
+      it.addEventListener('click',function(e){ e.stopPropagation(); });
+    });
+    insertDrop.addEventListener('mouseleave',closeFly);
+    /* 图片子菜单：上传本地图片 */
+    document.getElementById('imageSub').addEventListener('click',function(e){
+      e.stopPropagation();
+      if(!e.target.closest('[data-imgact]')) return;
+      pendingImageIndex=quill.getSelection(true).index;
+      closeAllMenus();
+      document.getElementById('imageInput').click();
+    });
+  })();
   var imageInput=document.getElementById('imageInput');
   imageInput.addEventListener('change',function(e){
     var f=e.target.files[0];
@@ -1233,8 +1290,25 @@
 
   bhMenu.addEventListener('click',function(e){
     e.stopPropagation(); if(!curBlock) return;
+    /* 选中当前段落（复刻石墨：点击三条线菜单全选段落） */
+    try{
+      var blot=Quill.find(curBlock);
+      if(blot){
+        var off=quill.getIndex(blot);
+        var len=blot.length();
+        if(len>0) len-=1;
+        quill.setSelection(off, Math.max(0,len));
+      }
+    }catch(err){}
     var r=blockHandle.getBoundingClientRect();
-    showCtx(r.right+4, r.top-5);
+    /* 石墨：主菜单向手柄左侧展开（右缘贴手柄、不压正文），左侧空间不足再回退右侧；垂直居中于手柄。
+       注意：菜单先 display 再量尺寸，否则隐藏态 offsetWidth=0。 */
+    ctxMenu.style.display='block'; ctxMenu.classList.add('open');
+    var mw=ctxMenu.offsetWidth, mh=ctxMenu.offsetHeight;
+    var x=r.left-8-mw;
+    if(x<8) x=r.right+4;
+    var y=r.top+r.height/2-mh/2;
+    showCtx(x,y);
   });
   bhCollapse.addEventListener('click',function(e){
     e.stopPropagation(); if(!isHeading(curBlock)) return;
@@ -1431,49 +1505,7 @@
   });
   document.addEventListener('click',function(e){ if(!slashMenu.contains(e.target)){ hideSlash(); slashStartIdx=-1; } });
 
-  /* ===== 划词浮动工具栏（石墨：选中文字后弹出） ===== */
-  var floatBar=document.getElementById('floatBar');
-  function showFloatBar(){
-    var sel=quill.getSelection();
-    if(!sel || !sel.length){ floatBar.classList.remove('open'); return; }
-    var bounds=quill.getBounds(sel.index, sel.length);
-    var rootRect=editorRoot.getBoundingClientRect();
-    var cx=bounds.left+rootRect.left+bounds.width/2;
-    var y=bounds.top+rootRect.top-44;
-    var w=floatBar.offsetWidth||280;
-    if(cx-w/2<4) cx=w/2+4;
-    if(cx+w/2>window.innerWidth-4) cx=window.innerWidth-w/2-4;
-    if(y<4) y=bounds.bottom+rootRect.top+4;
-    floatBar.style.left=(cx-w/2)+'px';
-    floatBar.style.top=y+'px';
-    floatBar.classList.add('open');
-    // 刷新激活态
-    var f=quill.getFormat()||{};
-    ['bold','italic','underline','strike'].forEach(function(k){
-      var btn=floatBar.querySelector('[data-act="'+k+'"]');
-      if(btn) btn.classList.toggle('on', !!f[k]);
-    });
-    document.getElementById('fbColorBar').style.background=f.color||'#000';
-  }
-  function hideFloatBar(){ floatBar.classList.remove('open'); }
-  quill.on('selection-change',function(range){
-    if(range && range.length>0){ setTimeout(showFloatBar,10); }
-    else hideFloatBar();
-  });
-  floatBar.addEventListener('mousedown',function(e){ e.preventDefault(); });
-  floatBar.querySelectorAll('.fb-btn').forEach(function(btn){
-    btn.addEventListener('click',function(){
-      var act=btn.dataset.act;
-      if(act==='link'){ var l=prompt('链接 URL：'); if(l) quill.format('link',l); }
-      else if(act==='color'){
-        var c=prompt('文字颜色（如 #e95555）：'); if(c) quill.format('color',c);
-      }
-      else if(act==='comment'){ toast('已添加评论（演示）'); }
-      else quill.format(act, !(quill.getFormat()[act]));
-      refreshToolbar(); showFloatBar();
-    });
-  });
-  scrollArea.addEventListener('scroll',hideFloatBar,true);
+  /* 划词浮动工具栏已移除（对齐石墨产品行为） */
 
   /* ===== 石墨风格快捷键 ===== */
   document.addEventListener('keydown',function(e){
@@ -1515,9 +1547,61 @@
     closeAllMenus();
     toast('正在导出 '+fmt.toUpperCase()+'…');
   });
-  document.getElementById('newBtn').addEventListener('click',async function(){
-    var d=await EditorAPI.docs.create({title:'未命名文档'});
-    openDoc(d.id); toast('已新建文档'); refreshList();
+  /* 左上角「▼」：石墨风格快捷面板（搜索文件 + 返回到 + 最近使用） */
+  function loadQpRecent(filter){
+    var box=document.getElementById('qpRecent');
+    EditorAPI.docs.list().then(function(docs){
+      box.innerHTML='';
+      docs.forEach(function(d){
+        if(filter && d.title.toLowerCase().indexOf(filter.toLowerCase())<0) return;
+        var it=document.createElement('div'); it.className='dmi';
+        it.innerHTML='<span class="qp-ico">📄</span>'+escapeHtml(d.title);
+        it.addEventListener('click',function(){ closeAllMenus(); openDoc(d.id); });
+        box.appendChild(it);
+      });
+      if(!box.children.length) box.innerHTML='<div style="padding:.6em;color:#9aa0a6;font-size:.85em;">无匹配文件</div>';
+    });
+  }
+  /* "返回到"：从后端拉真实空间/文件夹数据渲染 */
+  function loadQpBack(){
+    var box=document.getElementById('qpBack');
+    box.innerHTML='<div style="padding:.5em;color:#9aa0a6;font-size:.85em;">加载中…</div>';
+    EditorAPI.nav().then(function(data){
+      box.innerHTML='';
+      var spaces=data.spaces||[], folders=data.folders||[];
+      // 我的桌面（根）
+      var root=document.createElement('div'); root.className='dmi';
+      root.innerHTML='<span class="qp-ico">🏠</span>我的桌面';
+      root.addEventListener('click',function(){ location.href='/'; });
+      box.appendChild(root);
+      // 空间
+      spaces.forEach(function(s){
+        var it=document.createElement('div'); it.className='dmi';
+        var icon = s.kind==='personal' ? '🗂' : '🌐';
+        it.innerHTML='<span class="qp-ico">'+icon+'</span>'+escapeHtml(s.name);
+        it.addEventListener('click',function(){ location.href='/space/'+s.id+'/'; });
+        box.appendChild(it);
+      });
+      // 文件夹（按空间分组缩进）
+      folders.forEach(function(f){
+        var it=document.createElement('div'); it.className='dmi qp-folder';
+        it.innerHTML='<span class="qp-ico">📁</span>'+escapeHtml(f.name);
+        it.addEventListener('click',function(){ location.href='/space/'+f.space+'/folder/'+f.id+'/'; });
+        box.appendChild(it);
+      });
+      if(!box.children.length) box.innerHTML='<div style="padding:.6em;color:#9aa0a6;font-size:.85em;">暂无位置</div>';
+    }).catch(function(){
+      box.innerHTML='<div style="padding:.6em;color:#9aa0a6;font-size:.85em;">加载失败</div>';
+    });
+  }
+  document.getElementById('newBtn').addEventListener('click',function(e){
+    e.stopPropagation(); closeAllMenus();
+    document.getElementById('newMenu').classList.add('open');
+  });
+  document.getElementById('qpSearch').addEventListener('input',function(){ loadQpRecent(this.value); });
+  document.getElementById('quickPanel').addEventListener('click',function(e){
+    var loc=e.target.closest('[data-loc]');
+    if(loc){ closeAllMenus(); location.href='/'; }
   });
   document.getElementById('delBtn').addEventListener('click',async function(){
     if(!store.docId||!confirm('确定删除这篇文档吗？')) return;
@@ -1550,7 +1634,40 @@
   var drawer=document.getElementById('drawer'), mask=document.getElementById('mask');
   function openDrawer(){ refreshList(); drawer.classList.add('open'); mask.classList.add('show'); }
   function closeDrawer(){ drawer.classList.remove('open'); mask.classList.remove('show'); }
-  document.getElementById('listBtn').addEventListener('click',openDrawer);
+  /* 倒三角▼：打开快捷面板（搜索文件 + 返回到 + 最近使用） */
+  document.getElementById('listBtn').addEventListener('click',function(e){
+    e.stopPropagation(); closeAllMenus();
+    document.getElementById('quickPanel').classList.add('open');
+    loadQpRecent('');
+    loadQpBack();
+    setTimeout(function(){ document.getElementById('qpSearch').focus(); },0);
+  });
+  /* 演示用户切换：写 localStorage，nav 接口按新用户权限重新拉取 */
+  (function(){
+    var sel=document.getElementById('demoUser');
+    if(!sel) return;
+    var cur=(window.localStorage&&localStorage.getItem('demoUser'))||'alice';
+    sel.value=cur;
+    sel.addEventListener('change',function(){
+      if(window.localStorage) localStorage.setItem('demoUser', sel.value);
+      location.reload();
+    });
+  })();
+  /* ＋号：打开"新建"菜单（文档/表格/幻灯片/思维导图…） */
+  document.getElementById('newMenu').addEventListener('mousedown',function(e){ e.preventDefault(); });
+  document.getElementById('newMenu').addEventListener('click',async function(e){
+    var it=e.target.closest('[data-new]'); if(!it) return;
+    var kind=it.dataset.new;
+    if(kind==='doc'){
+      await doSave();
+      var d=await EditorAPI.docs.create({title:'未命名文档'});
+      store.docId=d.id; syncTitle('未命名文档'); quill.setText('');
+      history.replaceState(null,'','/docs/'+d.id+'/'); setStatus('已保存');
+      closeAllMenus(); buildOutline(); toast('已新建文档');
+    } else {
+      toast(it.textContent.trim()+'（演示）'); closeAllMenus();
+    }
+  });
   document.getElementById('drawerClose').addEventListener('click',closeDrawer);
   mask.addEventListener('click',closeDrawer);
 

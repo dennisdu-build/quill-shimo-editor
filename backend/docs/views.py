@@ -87,13 +87,14 @@ def doc_page(request, doc_id):
 
 @require_http_methods(['GET'])
 def list_docs(request):
-    """GET /api/docs/ —— 文档列表，可按 space/folder 过滤。
+    """GET /api/docs/ —— 文档列表（按当前用户权限过滤），可按 space/folder 过滤。
 
     查询参数：
       space=<id>            只看该空间
       folder=<id|root>      只看该文件夹；root 表示空间根目录（folder 为空）
     """
-    qs = Document.objects.all()
+    visible_space_ids = list(_visible_spaces(_current_user(request)).values_list('id', flat=True))
+    qs = Document.objects.filter(space_id__in=visible_space_ids)
     space_id = request.GET.get('space')
     folder_raw = request.GET.get('folder')
     if space_id:
@@ -255,22 +256,26 @@ def export_doc(request, doc_id, fmt):
 
 @require_http_methods(['GET'])
 def list_spaces(request):
-    """GET /api/spaces/ —— 全部空间（个人空间在前）。"""
-    spaces = sorted(Space.objects.all(), key=lambda s: (s.kind != 'personal', s.created_at))
+    """GET /api/spaces/ —— 当前用户可见的空间（个人空间在前，按权限过滤）。"""
+    spaces = _visible_spaces(_current_user(request)).order_by('kind', 'created_at')
     return JsonResponse([_space_to_dict(s) for s in spaces], safe=False)
 
 
 @csrf_exempt
 @require_http_methods(['POST'])
 def create_space(request):
-    """POST /api/spaces/create/ —— 新建空间（团队空间），body: {"name"}。"""
+    """POST /api/spaces/create/ —— 新建团队空间，body: {"name"}。
+
+    自动把当前用户设为 owner（管理员），保证创建者立即可见、可管理。
+    """
     payload = _json_body(request)
     name = (payload.get('name') or '').strip()[:100]
     if not name:
         return HttpResponseBadRequest(
             JsonResponse({'error': '名称不能为空'}).content,
             content_type='application/json')
-    space = Space.objects.create(name=name, kind=Space.KIND_TEAM)
+    user = _current_user(request)
+    space = Space.objects.create(name=name, kind=Space.KIND_TEAM, owner=user)
     return JsonResponse(_space_to_dict(space), status=201)
 
 
@@ -295,9 +300,10 @@ def delete_space(request, space_id):
 
 @require_http_methods(['GET'])
 def list_folders(request):
-    """GET /api/folders/?space=<id> —— 该空间下全部文件夹（扁平，前端自行建树）。"""
+    """GET /api/folders/?space=<id> —— 当前用户可见空间下的文件夹（扁平，前端自行建树）。"""
+    visible_space_ids = list(_visible_spaces(_current_user(request)).values_list('id', flat=True))
+    qs = Folder.objects.filter(space_id__in=visible_space_ids)
     space_id = request.GET.get('space')
-    qs = Folder.objects.all()
     if space_id:
         qs = qs.filter(space_id=space_id)
     return JsonResponse([_folder_to_dict(f) for f in qs], safe=False)
@@ -413,6 +419,62 @@ def upload_image(request):
     saved = default_storage.save(rel_path, f)
     url = settings.MEDIA_URL + saved.replace('\\', '/')
     return JsonResponse({'url': url, 'name': f.name or name}, status=201)
+
+
+# ==================== 导航树 API（快捷面板"返回到"） ====================
+
+def _current_user(request):
+    """取当前登录用户；演示环境无登录，用 X-Demo-User 头指定用户名。"""
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    if getattr(request, 'user', None) and request.user.is_authenticated:
+        return request.user
+    uname = request.META.get('HTTP_X_DEMO_USER') or request.GET.get('user')
+    if uname:
+        try:
+            return User.objects.get(username=uname)
+        except User.DoesNotExist:
+            pass
+    # 兜底：默认第一个用户，避免匿名看不到任何东西
+    return User.objects.first()
+
+
+def _visible_spaces(user):
+    """该用户有权看到的空间：自己的个人空间 + 自己作为 owner/成员的团队空间。"""
+    if user is None or not user.is_authenticated:
+        return Space.objects.none()
+    owned = Space.objects.filter(owner=user)
+    member = Space.objects.filter(members=user)
+    return (owned | member).distinct()
+
+
+@require_http_methods(['GET'])
+def nav_tree(request):
+    """GET /api/nav/ —— 按当前用户权限返回可见空间、文件夹、最近文档。
+
+    演示：通过请求头 X-Demo-User: <用户名> 切换用户（alice/bob/carol）。
+    只返回：该用户的个人空间 + 其作为 owner/成员的团队空间，及其下文件夹/文档。
+    """
+    user = _current_user(request)
+    spaces = _visible_spaces(user)
+    space_ids = list(spaces.values_list('id', flat=True))
+    folders = list(Folder.objects.filter(space_id__in=space_ids).order_by('name'))
+    docs = list(Document.objects.filter(space_id__in=space_ids).order_by('-updated_at')[:50])
+    return JsonResponse({
+        'current_user': user.username if user else None,
+        'spaces': [_space_to_dict(s) for s in spaces],
+        'folders': [_folder_to_dict(f) for f in folders],
+        'documents': [
+            {
+                'id': d.id,
+                'title': d.title,
+                'space': d.space_id,
+                'folder': d.folder_id,
+                'updated_at': _fmt_dt(d.updated_at),
+            }
+            for d in docs
+        ],
+    })
 
 
 # ==================== 通用文件上传（图片 / 音频 / 附件） ====================

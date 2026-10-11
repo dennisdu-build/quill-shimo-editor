@@ -11,7 +11,7 @@
 |---|---|---|---|
 | 运行时 | Python | 3.14 | 虚拟环境 `backend/.venv314` |
 | Web 框架 | Django | 5.2.x（约束 `>=5.0,<6.0`） | `backend/requirements.txt` |
-| 编辑器内核 | Quill | 2.0.3 | CDN `cdn.jsdelivr.net` |
+| 编辑器内核 | Quill | 2.0.3 | 本地 `docs/static/lib/quill/` |
 | 前端框架 | Vue | 3.5.13 | CDN |
 | 状态管理 | Pinia / vue-demi | 2.3.1 / 0.14.10 | CDN |
 | 关系数据库 | SQLite | 内建 | `backend/db.sqlite3` |
@@ -42,12 +42,14 @@ backend/
 │   ├── urls.py                     # API 路由（前缀 /api/）
 │   ├── exporters.py                # 文档导出转换（HTML/MD/TXT/DOCX/EPUB）
 │   ├── static/
+│   │   ├── lib/quill/quill.js      # Quill 2.0.3 内核（本地部署）
+│   │   ├── lib/quill/quill.snow.css # Quill Snow 主题（本地部署）
 │   │   ├── css/tokens.css          # 全局设计 TOKEN + 公共组件样式（toast 等）
 │   │   ├── css/editor.css          # 编辑器页专属样式
 │   │   ├── css/folder.css          # 文件管理页专属样式
 │   │   ├── js/common.js            # 公共工具（showToast）
-│   │   └── js/api.js               # 统一 API 客户端（window.EditorAPI）
-│   │   └── js/editor.js            # 编辑器页逻辑
+│   │   ├── js/api.js               # 统一 API 客户端（window.EditorAPI）
+│   │   ├── js/editor.js            # 编辑器页逻辑
 │   │   └── js/folder.js            # 文件管理页逻辑
 │   └── migrations/                 # 0001_initial、0002_space_folder
 ├── templates/editor/

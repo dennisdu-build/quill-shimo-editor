@@ -97,3 +97,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # 用户上传媒体（图片）：本地文件系统，正式环境可换对象存储
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+

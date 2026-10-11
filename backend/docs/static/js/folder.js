@@ -9,6 +9,8 @@ var spaces=[], folders=[], docs=[];
 var selected=new Set();           /* "d:147" / "f:5" */
 var sortKey='updated_at', sortAsc=false;
 var renaming=false;
+var filterKind='all';             /* all | doc | folder */
+var viewMode='list';              /* list | grid */
 
 /* ================= 图标 ================= */
 var ICON={
@@ -101,6 +103,31 @@ $('#tbCreateArrow').addEventListener('click',function(e){ popMenu($('#tbCreateWr
 $('#sbCreate').addEventListener('click',function(e){ popMenu(this,createMenuItems()); });
 $('#newHereBtn').addEventListener('click',function(e){ popMenu(this,createMenuItems()); });
 $('#emptyCreate').addEventListener('click',createDocHere);
+
+/* ================= 工具栏：筛选 / 视图 / 更多 ================= */
+function checkIcon(on){ return '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7.5L6 11l5.5-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="'+(on?1:0)+'"/></svg>'; }
+$('#filterBtn').addEventListener('click',function(e){
+  popMenu(this,[
+    {icon:checkIcon(filterKind==='all'),   label:'全部',     onClick:function(){ filterKind='all'; render(); }},
+    {icon:checkIcon(filterKind==='doc'),   label:'仅文档',   onClick:function(){ filterKind='doc'; render(); }},
+    {icon:checkIcon(filterKind==='folder'),label:'仅文件夹', onClick:function(){ filterKind='folder'; render(); }},
+  ]);
+});
+$('#viewBtn').addEventListener('click',function(e){
+  popMenu(this,[
+    {icon:checkIcon(viewMode==='list'), label:'列表视图', onClick:function(){ viewMode='list'; render(); }},
+    {icon:checkIcon(viewMode==='grid'), label:'网格视图', onClick:function(){ viewMode='grid'; render(); }},
+  ]);
+});
+$('#moreOpBtn').addEventListener('click',function(e){
+  popMenu(this,[
+    {icon:checkIcon(sortAsc), label:'升序排列', onClick:function(){ sortAsc=true; render(); }},
+    {icon:checkIcon(!sortAsc),label:'降序排列', onClick:function(){ sortAsc=false; render(); }},
+    {divider:true},
+    {icon:checkIcon(true), label:'按最近更新排序', onClick:function(){ sortKey='updated_at'; render(); }},
+    {icon:checkIcon(false),label:'按名称排序',     onClick:function(){ sortKey='title'; render(); }},
+  ]);
+});
 
 /* ================= 新建空间弹窗 ================= */
 var spaceModal=$('#spaceModal'), spaceInput=$('#spaceNameInput'), spaceOk=$('#spaceOk'), spaceError=$('#spaceError');
@@ -285,13 +312,16 @@ function buildDocRow(d){
 function render(){
   fileList.innerHTML='';
   var fRows=curFolders(), dRows=curDocs();
+  if(filterKind==='doc') fRows=[];
+  if(filterKind==='folder') dRows=[];
   var total=fRows.length+dRows.length;
   fRows.forEach(function(f){ fileList.appendChild(buildFolderRow(f)); });
   dRows.forEach(function(d){ fileList.appendChild(buildDocRow(d)); });
 
   $('#emptyState').style.display=total?'none':'flex';
-  $('#tableHeader').style.display=total?'grid':'none';
-
+  $('#tableHeader').style.display=(total&&viewMode==='list')?'grid':'none';
+  /* 网格视图：给列表区加 class */
+  $('#listWrapper').classList.toggle('grid-mode', viewMode==='grid');
   updateCkAll(total); updateDetail(); renderCrumbs(); renderSpaceList();
 }
 

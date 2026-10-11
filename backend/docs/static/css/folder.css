@@ -200,3 +200,13 @@ body.side-collapsed #gutterBtn svg{transform:rotate(180deg);}
 .cap-label{display:flex;justify-content:space-between;font-size:12px;color:rgba(65,70,75,.6);margin-bottom:6px;}
 #capBar{height:4px;background:#e8e8e8;border-radius:2px;overflow:hidden;}
 #capFill{display:block;height:100%;width:0;background:var(--sm-primary);transition:width .3s;}
+
+/* 网格视图：卡片式排列 */
+#listWrapper.grid-mode #fileList{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-top:12px;}
+#listWrapper.grid-mode .tr{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 8px;border:1px solid #e8eaed;border-radius:8px;}
+#listWrapper.grid-mode .fr-ck{position:absolute;margin-left:-150px;}
+#listWrapper.grid-mode .fr-meta,#listWrapper.grid-mode .fr-pub{display:none;}
+#listWrapper.grid-mode .fr-name{display:flex;flex-direction:column;align-items:center;gap:6px;}
+#listWrapper.grid-mode .fr-name svg{width:36px;height:36px;}
+#listWrapper.grid-mode .doc-title{font-size:.9em;text-align:center;}
+#listWrapper.grid-mode #tableHeader{display:none !important;}

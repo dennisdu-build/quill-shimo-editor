@@ -7,7 +7,7 @@
 <title>石墨文档</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%232E7CF6'/%3E%3Cpath d='M5 7h14' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M12 7v11' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
-<link rel="stylesheet" href="{% static 'css/folder.css' %}">
+<link rel="stylesheet" href="{% static 'css/folder.css' %}?v=7">
 <script src="{% static 'js/common.js' %}"></script>
 
 </head>
@@ -141,13 +141,13 @@
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5L5 6.5l3-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <div class="op-divider"></div>
-          <button class="op-btn" title="筛选">
+          <button class="op-btn" id="filterBtn" title="筛选">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 3.5h11L9.3 8.4v4.1l-2.6-1.4V8.4L2.5 3.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
           </button>
-          <button class="op-btn" title="视图设置">
+          <button class="op-btn" id="viewBtn" title="视图切换">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2.2" y="2.2" width="4.8" height="4.8" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2.2" width="4.8" height="4.8" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2.2" y="9" width="4.8" height="4.8" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="4.8" height="4.8" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
           </button>
-          <button class="op-btn" title="更多">
+          <button class="op-btn" id="moreOpBtn" title="更多">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="3.2" cy="8" r="1.1" fill="currentColor"/><circle cx="8" cy="8" r="1.1" fill="currentColor"/><circle cx="12.8" cy="8" r="1.1" fill="currentColor"/></svg>
           </button>
         </div>
@@ -222,8 +222,8 @@
   </div>
 </div>
 
-<script src="{% static 'js/api.js' %}"></script>
+<script src="{% static 'js/api.js' %}?v=5"></script>
 <script id="bootData" type="application/json">{"space": {{ space_id|default:1 }}, "folder": {{ folder_id|default:'null' }}}</script>
-<script src="{% static 'js/folder.js' %}"></script>
+<script src="{% static 'js/folder.js' %}?v=6"></script>
 </body>
 </html>

@@ -6,9 +6,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>石墨文档风格编辑器 · Django 版</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%232E7CF6'/%3E%3Cpath d='M5 7h14' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M12 7v11' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css">
-<link rel="stylesheet" href="{% static 'css/tokens.css' %}">
-<link rel="stylesheet" href="{% static 'css/editor.css' %}">
+<link rel="stylesheet" href="{% static 'lib/quill/quill.snow.css' %}">
+<link rel="stylesheet" href="{% static 'css/tokens.css' %}?v=2">
+<link rel="stylesheet" href="{% static 'css/editor.css' %}?v=14">
 
 </head>
 <body>
@@ -16,14 +16,45 @@
 <header class="file-page-header">
   <div class="header-left">
     <button class="hd-btn" id="backBtn" title="返回"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.78 4.72a.75.75 0 0 1 0 1.06L8.81 9.75l3.97 3.97a.75.75 0 1 1-1.06 1.06l-4.5-4.5a.75.75 0 0 1 0-1.06l4.5-4.5a.75.75 0 0 1 1.06 0z" fill="#41464B"/></svg></button>
-    <button class="hd-btn" id="listBtn" title="我的文档"><svg width="16" height="16" viewBox="0 0 16 16"><path fill="#2c3033" d="M8 11.2 1.5 4h13L8 11.2z"/></svg></button>
-    <button class="hd-btn" id="newBtn" title="新建文档"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    <div class="dropdown" style="position:relative;">
+      <button class="hd-btn" id="listBtn" title="快捷面板"><svg width="16" height="16" viewBox="0 0 16 16"><path fill="#2c3033" d="M8 11.2 1.5 4h13L8 11.2z"/></svg></button>
+      <div class="drop-menu qp-panel" id="quickPanel" style="left:0;right:auto;min-width:290px;padding:6px;">
+        <div class="qp-search"><svg width="15" height="15" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6" stroke="#9aa0a6" stroke-width="1.6"/><path d="M13.5 13.5 17 17" stroke="#9aa0a6" stroke-width="1.6" stroke-linecap="round"/></svg><input id="qpSearch" type="text" placeholder="搜索文件..." autocomplete="off"></div>
+        <div class="qp-label">返回到</div>
+        <div id="qpBack"></div>
+        <div class="qp-label">最近使用</div>
+        <div id="qpRecent"></div>
+      </div>
+    </div>
+    <div class="dropdown" style="position:relative;">
+      <button class="hd-btn" id="newBtn" title="新建文档"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      <div class="drop-menu" id="newMenu" style="left:0;right:auto;min-width:200px;padding:6px;">
+        <div class="dmi" data-new="doc"><span class="nm-ico">📄</span>文档</div>
+        <div class="dmi" data-new="trad"><span class="nm-ico">📝</span>传统文档</div>
+        <div class="dmi" data-new="sheet"><span class="nm-ico">📊</span>表格</div>
+        <div class="dmi" data-new="slide"><span class="nm-ico">📽</span>幻灯片</div>
+        <div class="dmi" data-new="apptable"><span class="nm-ico">📋</span>应用表格</div>
+        <div class="dmi" data-new="mind"><span class="nm-ico">🧠</span>思维导图</div>
+        <div class="dmi" data-new="form"><span class="nm-ico">📝</span>表单</div>
+        <div class="dmi" data-new="board"><span class="nm-ico">⬜</span>白板</div>
+        <div class="dmi" data-new="folder"><span class="nm-ico">📁</span>文件夹</div>
+        <div class="nm-div"></div>
+        <div class="dmi" data-new="template"><span class="nm-ico">📚</span>模板库</div>
+        <div class="dmi" data-new="upload"><span class="nm-ico">⬆️</span>上传</div>
+        <div class="dmi" data-new="uploadfolder"><span class="nm-ico">📂</span>上传文件夹</div>
+      </div>
+    </div>
   </div>
   <div class="header-center">
     <div id="docTitle" contenteditable="true" spellcheck="false">未命名文档</div>
     <span id="saveState">已保存</span>
   </div>
   <div class="header-right">
+    <select id="demoUser" title="切换演示用户（验证不同权限）" style="height:1.8em;font-size:.8em;border:1px solid #dcdfe3;border-radius:4px;background:#fff;color:#41464B;padding:0 .3em;margin-right:.5em;">
+      <option value="alice">👤 alice（管理员）</option>
+      <option value="bob">👤 bob（编辑/只读）</option>
+      <option value="carol">👤 carol（编辑）</option>
+    </select>
     <button class="hd-btn" id="shareBtn" title="分享"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><path d="M16 6l-4-4-4 4M12 2v13"/></svg></button>
     <button class="hd-btn" id="delBtn" title="删除"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>
     <div class="dropdown" style="position:relative;">
@@ -169,9 +200,9 @@
     <div class="dropdown" id="insertDrop">
       <button class="drop-btn" id="insertBtn"><span>插入</span><svg class="caret" viewBox="0 0 20 20" fill="none"><path fill="currentColor" d="M10.186 12.293a.25.25 0 0 1-.372 0L5.876 7.917A.25.25 0 0 1 6.06 7.5h7.878a.25.25 0 0 1 .185.417l-3.938 4.377Z"/></svg></button>
       <div class="drop-menu" id="insertMenu" style="min-width:112px;">
-        <div class="dmi" data-act="image">图片</div>
-        <div class="dmi" data-act="table">表格</div>
-        <div class="dmi" data-act="chart">图表</div>
+        <div class="dmi has-sub" data-act="image">图片<span class="sub-arrow"></span></div>
+        <div class="dmi has-sub" data-act="table">表格<span class="sub-arrow"></span></div>
+        <div class="dmi has-sub" data-act="chart">图表<span class="sub-arrow"></span></div>
         <div class="dmi" data-act="link">超链接</div>
         <div class="dmi" data-act="code">代码块</div>
         <div class="dmi" data-act="formula">公式</div>
@@ -184,7 +215,11 @@
         <div class="dmi" data-act="audio">音频</div>
         <div class="dmi" data-act="file">云文档</div>
         <div class="dmi" data-act="preview">预览窗口</div>
-        <div class="dmi" data-act="thirdparty">第三方</div>
+        <div class="dmi has-sub" data-act="thirdparty">第三方<span class="sub-arrow"></span></div>
+      </div>
+      <!-- 插入-图片：二级菜单 -->
+      <div class="drop-menu" id="imageSub" style="min-width:128px;">
+        <div class="dmi" data-imgact="upload">上传本地图片</div>
       </div>
       <!-- 插入-图表：类型子菜单 -->
       <div class="drop-menu" id="chartMenu">
@@ -298,21 +333,6 @@
 <div id="slashMenu">
   <div class="slash-head">输入命令或搜索</div>
   <div class="slash-list" id="slashList"></div>
-</div>
-
-<!-- 划词浮动工具栏（石墨：选中文字后弹出） -->
-<div id="floatBar">
-  <button class="fb-btn" data-act="bold" title="加粗"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M7 5h6a3.5 3.5 0 010 7H7zM7 12h7a3.5 3.5 0 010 7H7z" fill="currentColor"/></svg></button>
-  <button class="fb-btn" data-act="italic" title="斜体"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 5h8M6 19h8M14 5L10 19" stroke-linecap="round"/></svg></button>
-  <button class="fb-btn" data-act="underline" title="下划线"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4v6a6 6 0 0012 0V4"/><path d="M5 20h14" stroke-linecap="round"/></svg></button>
-  <button class="fb-btn" data-act="strike" title="删除线"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 6.5A5 5 0 007 8M8 18a5 5 0 008 0M4 12h16" stroke-linecap="round"/></svg></button>
-  <button class="fb-btn" data-act="link" title="链接"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></button>
-  <div class="fb-sep"></div>
-  <button class="fb-btn fb-color" data-act="color" title="文字颜色">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l6 6-8 8-6-6zM9 9l6 6" stroke-linejoin="round"/></svg>
-    <span class="fb-bar" id="fbColorBar" style="background:#000"></span>
-  </button>
-  <button class="fb-btn" data-act="comment" title="评论"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></button>
 </div>
 
 <!-- 右键菜单（复刻石墨） -->
@@ -455,9 +475,9 @@
 <script src="https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.global.prod.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vue-demi@0.14.10/lib/index.iife.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pinia@2.3.1/dist/pinia.iife.prod.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-<script src="{% static 'js/common.js' %}"></script>
-<script src="{% static 'js/api.js' %}"></script>
-<script src="{% static 'js/editor.js' %}"></script>
+<script src="{% static 'lib/quill/quill.js' %}"></script>
+<script src="{% static 'js/common.js' %}?v=2"></script>
+<script src="{% static 'js/api.js' %}?v=5"></script>
+<script src="{% static 'js/editor.js' %}?v=22"></script>
 </body>
 </html>

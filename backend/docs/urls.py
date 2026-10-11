@@ -3,6 +3,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # 导航树 API（快捷面板"返回到"）
+    path('nav/', views.nav_tree),
     # 文档 API
     path('docs/', views.list_docs),
     path('docs/create/', views.create_doc),

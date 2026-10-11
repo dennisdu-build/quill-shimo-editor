@@ -236,8 +236,8 @@ header.file-page-header{height:50px;background:linear-gradient(#fdfdfd,#ffffff);
 #cougarWrapper{display:flex;justify-content:center;width:100%;position:relative;align-self:flex-start;}
 
 /* 目录面板（石墨 TOC，左侧，sticky吸顶） */
-#outline.toc-panel{width:260px;min-width:240px;background:transparent;border-right:1px solid #e5e5e5;display:flex;flex-direction:column;flex-shrink:0;transition:margin-left .2s;position:sticky;top:0;align-self:flex-start;height:calc(100vh - 94px);overflow:hidden;}
-#outline.toc-panel.collapsed{margin-left:-260px;}
+#outline.toc-panel{width:312px;min-width:288px;background:transparent;border-right:1px solid #e5e5e5;display:flex;flex-direction:column;flex-shrink:0;transition:margin-left .2s;position:sticky;top:0;align-self:flex-start;height:calc(100vh - 94px);overflow:hidden;}
+#outline.toc-panel.collapsed{margin-left:-312px;}
 .toc-head{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:48px;flex-shrink:0;border-bottom:1px solid #e5e5e5;}
 .toc-head span{font-size:12px;color:#a5a5a5;font-weight:400;}
 .toc-close{width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:none;border:none;border-radius:2px;cursor:pointer;color:#a5a5a5;padding:0;}
@@ -270,17 +270,28 @@ header.file-page-header{height:50px;background:linear-gradient(#fdfdfd,#ffffff);
 #docHeader{border-bottom:1px solid #e8ecf1;box-sizing:content-box;display:flex;flex-direction:column;justify-content:flex-end;height:100px;margin:0 100px;padding-top:50px;width:auto;flex-shrink:0;}
 #docHeaderInput{font-feature-settings:"liga"0;background:transparent;border:none;box-shadow:none;color:#333;display:block;font-size:30px;font-weight:700;height:50px;line-height:50px;outline:none;width:100%;cursor:text;font-family:-apple-system,"system-ui",PingFang SC,Helvetica,Tahoma,Arial,"Microsoft YaHei",微软雅黑,黑体,SimSun,宋体,serif;-webkit-font-variant-ligatures:none;font-variant-ligatures:none;}
 #docHeaderInput::placeholder{color:#a5a5a5;}
-.ql-container.ql-snow{border:none!important;font-size:14px;flex:1;display:flex;flex-direction:column;}
-/* 石墨 hk-editor-content：padding 20px 0 100px，内容占满816px宽度 */
-.ql-editor{flex:1;min-height:600px;padding:20px 100px 100px;color:#333333;line-height:1.7;font-size:12pt;}
-.ql-snow .ql-editor h1,.ql-snow .ql-editor h2,.ql-snow .ql-editor h3,.ql-snow .ql-editor h4,.ql-snow .ql-editor h5,.ql-snow .ql-editor h6{font-weight:700;color:var(--ink-strong);margin:26px 0 12px;}
-.ql-snow .ql-editor h1{font-size:22.67px;line-height:32px;margin-top:32px;}
-.ql-snow .ql-editor h2{font-size:21.33px;line-height:30px;margin-top:28px;}
-.ql-snow .ql-editor h3{font-size:20px;line-height:28px;}
-.ql-snow .ql-editor h4{font-size:18.67px;line-height:26px;}
-.ql-snow .ql-editor h5{font-size:17.33px;line-height:24px;}
-.ql-snow .ql-editor h6{font-size:16px;line-height:24px;}
-.ql-snow .ql-editor p{margin:0 0 10px;font-size:14px;}
+.ql-container.ql-snow{border:none!important;font-size:1em;flex:1;display:flex;flex-direction:column;}
+/* 石墨 hk-editor-content：
+   字号/行距/颜色由 --doc-* 变量驱动（见 editor.js applyDocStyle）；
+   标题、段距、代码块等一律用 em，随基础字号 --doc-base 整体动态缩放，不写死 px。 */
+.ql-snow .ql-editor{
+  --doc-base:14px;
+  --doc-color:#494949;
+  --doc-line:1.7;
+  flex:1;min-height:600px;padding:20px 100px 100px;
+  color:var(--doc-color);line-height:var(--doc-line);
+  font-size:var(--doc-base);
+  font-family:-apple-system,"PingFang SC","Microsoft YaHei",微软雅黑,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;
+}
+.ql-snow .ql-editor h1,.ql-snow .ql-editor h2,.ql-snow .ql-editor h3,.ql-snow .ql-editor h4,.ql-snow .ql-editor h5,.ql-snow .ql-editor h6{font-weight:700;color:var(--doc-color);margin:1em 0 .35em;line-height:1.4;}
+.ql-snow .ql-editor h1{font-size:1.5em;margin-top:.5em;}
+.ql-snow .ql-editor h2{font-size:1.3em;}
+.ql-snow .ql-editor h3{font-size:1.2em;}
+.ql-snow .ql-editor h4{font-size:1.1em;}
+.ql-snow .ql-editor h5{font-size:1em;}
+.ql-snow .ql-editor h6{font-size:.93em;}
+.ql-snow .ql-editor p{margin:0;font-size:1em;}
 .ql-editor ul,.ql-editor ol{padding-left:20px;margin:0 0 12px;}
 .ql-editor ul:has(li[data-list]){padding-left:0;}
 .ql-editor li{margin:3px 0;}
@@ -334,12 +345,17 @@ header.file-page-header{height:50px;background:linear-gradient(#fdfdfd,#ffffff);
 .lsi-renumber{font-size:13px;color:var(--accent);cursor:pointer;padding:6px 8px;border-radius:2px;}
 .lsi-renumber:hover{background:#f5f5f5;}
 
-.ql-editor blockquote{color:var(--muted);border-left:4px solid #e5e5e5;padding:8px 0 8px 15px;margin:8px 0;}
+.ql-editor blockquote{color:var(--doc-color);border-left:3px solid #e5e5e5;padding:.2em 0 .2em 1em;margin:.5em 0;}
 .ql-editor a{color:var(--accent);text-decoration:none;}
 .ql-editor a:hover{color:var(--accent-2);text-decoration:underline;}
-.ql-editor code{background:#f7f7f7;border:1px solid #d9dadb;border-radius:3px;padding:0 4px;margin:0 4px;font-family:'Source Code Pro',Menlo,Consolas,monospace;font-size:85%;}
-.ql-editor pre{background:#f7f7f7;color:var(--ink);border-radius:2px;padding:10px 12px;font-family:'Source Code Pro',Menlo,Consolas,monospace;font-size:13px;line-height:22px;white-space:pre-wrap;border:1px solid #ececed;}
-.ql-editor pre.ql-syntax{background:#f7f7f7;color:var(--ink);}
+.ql-editor code{background:#f7f7f7;border:1px solid #d9dadb;border-radius:3px;padding:0 .25em;margin:0 .25em;font-family:'Source Code Pro',Menlo,Consolas,monospace;font-size:.85em;}
+.ql-editor pre{background:#f7f7f7;color:var(--doc-color);border-radius:2px;padding:.7em .9em;font-family:'Source Code Pro',Menlo,Consolas,monospace;font-size:.85em;line-height:1.6;white-space:pre-wrap;border:1px solid #ececed;}
+.ql-snow .ql-editor pre.ql-syntax{background:#f7f7f7!important;color:var(--doc-color)!important;}
+/* Quill 2 代码块：.ql-code-block-container / .ql-code-block，改为石墨风格浅灰底 */
+.ql-snow .ql-editor .ql-code-block-container{background:#f7f7f7!important;border:1px solid #ececed;border-radius:2px;margin:0 0 12px;}
+.ql-snow .ql-editor .ql-code-block{background:transparent!important;color:var(--doc-color)!important;font-family:'Source Code Pro',Menlo,Consolas,monospace;font-size:.85em;line-height:1.6;padding:.7em .9em;white-space:pre-wrap;}
+/* 石墨风格日期芯片：蓝色胶囊，随字号用 em 缩放 */
+.ql-snow .ql-editor .doc-date{display:inline-flex;align-items:center;gap:.3em;color:#2e7cf6;background:rgba(46,124,246,.08);padding:.08em .55em;border-radius:.3em;font-size:.92em;line-height:1.4;cursor:pointer;white-space:nowrap;}
 .ql-editor table{border-collapse:collapse;width:100%;margin:0 0 12px;}
 .ql-editor table td,.ql-editor table th{border:1px solid #d9d9d9;padding:8px 12px;font-size:14px;min-width:40px;}
 .ql-editor table th{background:#f7f7f7;font-weight:600;}
@@ -399,12 +415,37 @@ header.file-page-header{height:50px;background:linear-gradient(#fdfdfd,#ffffff);
 .slash-item .si-text{flex:1;}
 .slash-item .si-hint{font-size:11px;color:var(--muted);}
 
-/* 划词浮动工具栏（石墨风格） */
-#floatBar{position:fixed;z-index:87;background:#fff;border:1px solid var(--border-2);border-radius:2px;box-shadow:0 4px 16px rgba(0,0,0,.12);padding:3px;display:none;align-items:center;gap:1px;}
-#floatBar.open{display:flex;}
-.fb-btn{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;background:none;border:none;border-radius:2px;cursor:pointer;color:var(--ink);padding:0;position:relative;}
-.fb-btn:hover{background:rgba(65,70,75,.08);color:var(--ink);}
-.fb-btn.on{background:var(--blue1);color:var(--accent);}
-.fb-color .fb-bar{position:absolute;left:6px;right:6px;bottom:3px;height:2px;border-radius:1px;}
-.fb-sep{width:1px;height:18px;background:var(--border-2);margin:0 2px;}
+/* 划词浮动工具栏已移除（对齐石墨产品行为） */
 
+
+/* 石墨左上角「+」快捷面板 */
+.qp-panel{padding:8px!important;}
+.qp-search{display:flex;align-items:center;gap:.5em;background:#f2f3f5;border-radius:.4em;padding:.45em .8em;margin-bottom:.4em;}
+.qp-search input{border:none;outline:none;background:transparent;flex:1;font-size:.92em;color:#2c3033;}
+.qp-search input::placeholder{color:#9aa0a6;}
+.qp-label{font-size:.78em;color:#9aa0a6;padding:.5em .4em .25em;}
+.qp-panel .dmi{display:flex;align-items:center;gap:.55em;padding:.5em .6em;border-radius:.35em;font-size:.92em;color:#2c3033;}
+.qp-panel .dmi:hover{background:#f2f3f5;}
+.qp-ico{width:1.2em;text-align:center;}
+.qp-ext{margin-left:auto;color:#9aa0a6;font-size:.85em;}
+#qpRecent .dmi{padding:.5em .6em;}
+#qpRecent .dmi .qp-ico{color:#9aa0a6;}
+
+/* 插入的图表：居中、响应式宽度 */
+.ql-snow .ql-editor .doc-chart{text-align:center;margin:.5em 0;}
+.ql-snow .ql-editor .doc-chart svg{max-width:100%;height:auto;}
+
+/* 顶部"新建"菜单 */
+.drop-menu .nm-ico{display:inline-block;width:1.5em;text-align:center;margin-right:.4em;}
+.drop-menu .nm-div{height:1px;background:#eee;margin:.4em 0;}
+
+/* 插入菜单二级：向右箭头 + 滑出子菜单 */
+.drop-menu .dmi{position:relative;}
+.drop-menu .dmi .sub-arrow{position:absolute;right:.7em;top:50%;transform:translateY(-50%);width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:5px solid #4a4a4a;}
+.drop-menu .dmi.has-sub{padding-right:1.8em;}
+/* 滑出的二级菜单：绝对定位，JS 动态放在主菜单右侧 */
+#insertDrop .fly-sub{position:absolute;z-index:30;display:none;}
+#insertDrop .fly-sub.open{display:block;}
+
+/* 快捷面板：文件夹缩进 */
+.drop-menu .dmi.qp-folder{padding-left:2em;}
